@@ -5,20 +5,18 @@ public class Main {
     public static void main(String[] args) {
         // our states
         State q0 = new State("Q0", false);
-        State q1 = new State("Q1", true);
+        State q1 = new State("Q1", false);
+        State q2 = new State("Q2", true);
 
         // transitions
         q0.addTransition('a', q1);
-        q0.addTransition('b', q0);
-
-        q1.addTransition('a', q0);
-        q1.addTransition('b', q0);
-        q1.addTransition('b', q1);
+        q1.addTransition('b', q2);
+        q2.addTransition('ϵ', q1);
 
         NFA nfa = new NFA(q0);
 
         // List of test strings
-        String[] testStrings = { "a", "aa", "ab", "abb", "aaa", "aba", "aabaa", "abbbb", "aabbbba", "b", "ba", "" };
+        String[] testStrings = { "ab", "abab", "ababab", "", "a", "b", "aba", "ba", "bb", "ababb" };
 
         // Test each string
         for (String testString : testStrings) {

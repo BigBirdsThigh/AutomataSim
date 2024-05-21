@@ -22,6 +22,7 @@ public class NFA {
                                                      // input char
             for (State state : newStates) {
                 nextStates.addAll(state.getNextState(c)); // put all transitions state has when given input
+                nextStates.addAll(state.getNextState('ϵ')); // ensure all epsilon transitions are added to our set
             }
             newStates = nextStates;
 
