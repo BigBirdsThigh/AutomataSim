@@ -31,4 +31,7 @@ public class State {
     public boolean isAcceptState() {
         return isAcceptState;
     }
+
+    // PDA specific functions
+
 }

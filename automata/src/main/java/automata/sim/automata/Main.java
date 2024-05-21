@@ -7,11 +7,13 @@ public class Main {
         State q0 = new State("Q0", false);
         State q1 = new State("Q1", false);
         State q2 = new State("Q2", true);
+        State q3 = new State("Q3", false);
 
         // transitions
         q0.addTransition('a', q1);
         q1.addTransition('b', q2);
-        q2.addTransition('ϵ', q1);
+        q2.addTransition('a', q3);
+        q3.addTransition('b', q2);
 
         NFA nfa = new NFA(q0);
 
