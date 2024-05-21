@@ -9,7 +9,8 @@ public class Main {
 
         // transitions
         q0.addTransition('a', q1);
-        q0.addTransition('a', q0);
+        q0.addTransition('b', q0);
+
         q1.addTransition('a', q0);
         q1.addTransition('b', q0);
         q1.addTransition('b', q1);
