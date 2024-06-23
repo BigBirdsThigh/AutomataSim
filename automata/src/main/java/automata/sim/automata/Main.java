@@ -1,5 +1,8 @@
 package automata.sim.automata;
 
+import java.util.List;
+import java.util.Stack;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -28,32 +31,21 @@ public class Main {
         // "Accepted" : "Rejected"));
         // }
 
+        // q0.addTransition('s', t2);
+        // q0.addTransition('s', t3);
+        // q0.addTransition('s', t4);
+
+        Stack<Character> stack = new Stack<Character>();
+        stack.push('s');
+
         PDAState q0 = new PDAState("Q0", false);
         PDAState q1 = new PDAState("Q1", false);
+        PDAState q2 = new PDAState("Q2", false);
+        PDAState q3 = new PDAState("Q3", false);
 
-        String[] t1 = { "q1", "f", "x" };
-        String[] t2 = { "q3", "c", "x" };
-        String[] t3 = { "q3", "g", "x" };
-        String[] t4 = { "q4", "c", "q" };
-
-        q0.addTransition('s', t1);
-        q0.addTransition('s', t2);
-        q0.addTransition('s', t3);
-        q0.addTransition('s', t4);
-
-        String[] output = q0.getPopsAndStates('s');
-        System.out.println("The transition data for q0 is: ");
-        if (output.length != 0) {
-            for (String str : output) {
-                System.out.println(str);
-            }
-        }
-
-        // System.out.println(output[1]);
-
-        // System.out.println("Next state for transition is: " + t1[0]);
-        // System.out.println("Stack pop command for transition is: " + t1[1]);
-        // System.out.println("Stack push command for transition is: " + t1[2]);
+        q0.addTransition('f', ' ', q1, "Z");
+        q1.addTransition('c', ' ', q2, "A");
+        q2.addTransition('b', 'A', q3, "");
 
     }
 

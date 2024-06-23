@@ -4,48 +4,58 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.boot.autoconfigure.web.WebProperties.Resources.Chain;
+
+import com.fasterxml.jackson.databind.deser.std.NumberDeserializers.CharacterDeserializer;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.*;
 
+// Probs won't
 public class PDAState {
     private String name;
-    private Map<Character, String[]> transitions;
+    private Map<Pair<Character, Character>, Pair<PDAState, String>> transitions;
     private boolean isAcceptState;
+    private char input;
+    private char pop;
+    private String push;
 
     public PDAState(String name, boolean isAcceptState) {
         this.name = name;
+        this.pop = pop;
+        this.push = push;
+        this.input = input;
         this.isAcceptState = isAcceptState;
         this.transitions = new HashMap<>();
     }
 
-    // PDA states will hold transition of mapping from char to array
-    // {nextState, pop, push}
-    public void addTransition(char input, String[] transition) {
-        transitions.computeIfAbsent(input, k -> transition);
+    public Map<Pair<Character, Character>, Pair<PDAState, String>> addTransition(char input, char pop,
+            PDAState newState, String push) {
+
+        // using ? and : in the variables instead of multiple if statements. where ? is
+        // to check if a condition is met and : is used as an else
+        Pair<Character, Character> oneHalf = new Pair<>(input == ' ' ? 'ϵ' : input, pop == ' ' ? 'ϵ' : pop);
+
+        Pair<PDAState, String> twoHalf = new Pair<>(newState,
+                (push == null || push.trim().isEmpty()) ? "ϵ" : push);
+
+        this.transitions.put(oneHalf, twoHalf);
+
+        printTransitions();
+
+        return transitions;
+
     }
 
-    // Get valid states
-    public String[] getNextStates(char input) {
-        String[] empty = new String[0];
-        // return transitions.get(input);
-        if (transitions.get(input) != null) {
-            return transitions.get(input);
-        } else {
-            return empty;
+    // Debugging Function
+    public void printTransitions() {
+        for (Map.Entry<Pair<Character, Character>, Pair<PDAState, String>> entry : transitions.entrySet()) {
+            Pair<Character, Character> key = entry.getKey();
+            Pair<PDAState, String> value = entry.getValue();
+            System.out.println("Key: " + key + " -> Value: " + value);
         }
-    }
-
-    public String[] getPopsAndStates(char input) {
-        String[] temp = getNextStates(input);
-        String[] emtpy = new String[0];
-        if (temp.length == 0) {
-            return emtpy;
-        } else {
-            String[] output = { temp[0], temp[1] };
-            return output;
-
-        }
-
     }
 
     // Getters

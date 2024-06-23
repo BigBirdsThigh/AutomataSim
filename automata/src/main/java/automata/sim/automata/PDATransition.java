@@ -1,38 +1,23 @@
 package automata.sim.automata;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public class PDATransition {
-    private PDAState currentState;
-    private PDAState nextState;
+    private PDAState newState;
+    private State currentState;
+    private String name;
     private char input; // The input character required for this transition
     private char pop; // The character to pop from the stack for this transition
     private String push; // The string to push onto the stack for this transition
+    private Object details;
 
-    public PDATransition(PDAState currentState, PDAState nextState, char input, char pop, String push) {
-        this.currentState = currentState;
-        this.nextState = nextState;
+    public PDATransition(char input, char pop, String push, PDAState newState) {
         this.input = input;
         this.pop = pop;
         this.push = push;
+        this.newState = newState; // why is this coloured oddly
     }
 
-    // Getters
-    public PDAState getCurrentState() {
-        return currentState;
-    }
-
-    public PDAState getNextState() {
-        return nextState;
-    }
-
-    public char getInput() {
-        return input;
-    }
-
-    public char getPop() {
-        return pop;
-    }
-
-    public String getPush() {
-        return push;
-    }
 }

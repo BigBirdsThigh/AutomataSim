@@ -32,6 +32,4 @@ public class State {
         return isAcceptState;
     }
 
-    // PDA specific functions
-
 }
