@@ -39,7 +39,7 @@ public class PDAState {
         Pair<Character, Character> oneHalf = new Pair<>(input == ' ' ? 'ϵ' : input, pop == ' ' ? 'ϵ' : pop);
 
         Pair<PDAState, String> twoHalf = new Pair<>(newState,
-                (push == null || push.trim().isEmpty()) ? "ϵ" : push);
+                (push == null || push.trim().isEmpty()) ? "s" : push);
 
         this.transitions.put(oneHalf, twoHalf);
 

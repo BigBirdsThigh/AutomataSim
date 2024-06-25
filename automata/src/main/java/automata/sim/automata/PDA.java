@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.Stack;
 
 public class PDA {
     private PDAState startState;
@@ -17,6 +18,11 @@ public class PDA {
         this.startState = startState;
         this.startSymbol = startSymbol; // unique char for bottom of stack
 
+    }
+
+    // TODO: recursive DFS method to check each path for validity
+    public boolean simulate(String input, Stack stack) {
+        return false;
     }
 
     // push to our stack

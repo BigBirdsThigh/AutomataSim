@@ -20,16 +20,20 @@ public class Main {
 
         // NFA nfa = new NFA(q0);
 
-        // // // List of test strings
+        // // List of test strings
         // String[] testStrings = { "ab", "abab", "ababab", "", "a", "b", "aba", "ba",
         // "bb", "ababb" };
 
-        // // // Test each string
+        // // Test each string
+        // // long begin = System.currentTimeMillis();
         // for (String testString : testStrings) {
         // boolean result = nfa.simulate(testString);
         // System.out.println("Test with \"" + testString + "\": " + (result ?
         // "Accepted" : "Rejected"));
         // }
+        // long end = System.currentTimeMillis();
+        // long executeTime = end - begin;
+        // System.out.println("System took: " + executeTime + " ms to execute.");
 
         // q0.addTransition('s', t2);
         // q0.addTransition('s', t3);
