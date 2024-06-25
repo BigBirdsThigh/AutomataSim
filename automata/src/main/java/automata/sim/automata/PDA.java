@@ -52,6 +52,7 @@ public class PDA {
         currPath.add(currState);
 
         if (index == input.length()) {
+            // check if our special stack symbol is at the bottom again
             if (stack.isEmpty() || stack.peek() == startSymbol) {
                 allPaths.add(new ArrayList<>(currPath));
                 System.out.println("Valid Path found");
@@ -61,8 +62,16 @@ public class PDA {
             return;
         }
 
+        // current character in put we are on
         Character currInput = input.charAt(index);
+
+        // All valid transitions from out state
         Set<Pair<PDAState, String>> transitions = currState.getTransitions(currInput, checkTop());
+
+        // loop over each transition
+        // We go to the first transition, pop and push based on the transition and then
+        // recurse into the valid transitions of the next state dictated by the
+        // transition
         for (Pair<PDAState, String> transition : transitions) {
             String transitionOutput = transition.getValue();
             PDAState nextState = transition.getKey();
@@ -81,6 +90,7 @@ public class PDA {
                 pushTo(transitionOutput);
             }
 
+            // recurse into next state, add 1 to index to move up our input
             generatePaths(nextState, input, index + 1, currPath, allPaths);
 
             // Undo the push operations made during this path

@@ -49,17 +49,26 @@ public class Main {
         PDAState q4 = new PDAState("Q4", false);
         PDAState q5 = new PDAState("Q5", false);
 
-        q0.addTransition('f', ' ', q1, "Z");
-        q0.addTransition('f', ' ', q1, "Q");
-        q1.addTransition('c', ' ', q2, "A");
-        q2.addTransition('b', 'A', q3, "");
-        q3.addTransition('b', 'Z', q5, "");
-        q4.addTransition('b', ' ', q2, "");
-        q5.addTransition('b', 'c', q0, "");
+        q1.addTransition('A', ' ', q2, "A");
+        q1.addTransition('B', ' ', q3, "B");
 
-        PDA pda = new PDA(q0, 'c');
+        q2.addTransition('A', ' ', q2, "");
+        q2.addTransition('B', 'A', q4, "");
 
-        pda.simulate("fcbbb");
+        q4.addTransition('A', ' ', q2, "A");
+        q4.addTransition(' ', '#', q1, "#");
+        q4.addTransition('B', 'A', q4, "");
+
+        q3.addTransition('B', ' ', q3, "B");
+        q3.addTransition('A', 'B', q5, "");
+
+        q5.addTransition('B', ' ', q3, "B");
+        q5.addTransition('A', 'B', q5, "");
+        q5.addTransition(' ', '#', q1, "#");
+
+        PDA pda = new PDA(q1, '#');
+
+        pda.simulate("ABAB");
 
     }
 

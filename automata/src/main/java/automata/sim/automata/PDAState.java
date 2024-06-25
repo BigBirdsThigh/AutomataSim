@@ -50,9 +50,11 @@ public class PDAState {
     }
 
     public Set<Pair<PDAState, String>> getTransitions(char input, char pop) {
+        char normalizedInput = input == ' ' ? 'ϵ' : input;
         char normalizedPop = pop == ' ' ? 'ϵ' : pop;
+
         return transitions.entrySet().stream()
-                .filter(entry -> entry.getKey().getKey() == input &&
+                .filter(entry -> (entry.getKey().getKey() == normalizedInput || entry.getKey().getKey() == 'ϵ') &&
                         (entry.getKey().getValue() == normalizedPop || entry.getKey().getValue() == 'ϵ'))
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toSet());
