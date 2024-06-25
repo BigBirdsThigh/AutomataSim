@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.deser.std.NumberDeserializers.CharacterDes
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.*;
 
 // Probs won't
@@ -43,10 +44,19 @@ public class PDAState {
 
         this.transitions.put(oneHalf, twoHalf);
 
-        printTransitions();
+        // printTransitions();
 
         return transitions;
 
+    }
+
+    public Set<Pair<PDAState, String>> getTransitions(char input, char pop) {
+        char popSymbol = pop == ' ' ? 'ϵ' : pop;
+        return transitions.entrySet().stream()
+                .filter(entry -> entry.getKey().getKey().equals(input) &&
+                        (entry.getKey().getValue().equals(popSymbol) || entry.getKey().getValue().equals('ϵ')))
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toSet());
     }
 
     // Debugging Function
