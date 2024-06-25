@@ -59,13 +59,8 @@ public class PDAState {
                 .collect(Collectors.toSet());
     }
 
-    // Debugging Function
     public void printTransitions() {
-        for (Map.Entry<Pair<Character, Character>, Pair<PDAState, String>> entry : transitions.entrySet()) {
-            Pair<Character, Character> key = entry.getKey();
-            Pair<PDAState, String> value = entry.getValue();
-            System.out.println("Key: " + key + " -> Value: " + value);
-        }
+        transitions.forEach((key, value) -> System.out.println("Key: " + key + " -> Value: " + value));
     }
 
     // Getters

@@ -12,19 +12,20 @@ import java.util.ArrayList;
 
 public class PDA {
     private PDAState startState;
-    private static Stack stack;
+    private Stack<Character> stack;
     private char startSymbol;
     // private Set<State> currentStates;
 
     public PDA(PDAState startState, char startSymbol) {
         this.startState = startState;
         this.startSymbol = startSymbol; // unique char for bottom of stack
-        stack.push('X');
+        this.stack = new Stack<>(); // Initialize the stack here
+        this.stack.push(startSymbol); // Push the start symbol onto the stack
 
     }
 
     public List<List<PDAState>> generateAllPaths(PDAState initialState, String input) {
-        List<List<PDAState>> allPaths = null;
+        List<List<PDAState>> allPaths = new ArrayList<>();
         generatePaths(initialState, input, 0, new ArrayList(), allPaths);
         return allPaths;
     }
@@ -35,15 +36,18 @@ public class PDA {
         currPath.add(currState);
 
         // processed this path so add it to allPaths
-        if (index == input.length()) {
+        if (index == input.length() - 1) {
             allPaths.add(new ArrayList<>(currPath));
+
+            currPath.remove(currPath.size() - 1);
             return;
         }
 
         Character currInput = input.charAt(index);
+        currState.printTransitions();
         // iterate over valid transitions
-        for (Pair<PDAState, String> state : currState.getTransitions(currInput, (char) PDA.stack.peek())) {
-            generatePaths(state.getKey(), input, index++, currPath, allPaths);
+        for (Pair<PDAState, String> state : currState.getTransitions(currInput, checkTop())) {
+            generatePaths(state.getKey(), input, index + 1, currPath, allPaths);
         }
 
         currPath.remove(currPath.size() - 1);
@@ -52,7 +56,10 @@ public class PDA {
 
     // TODO: recursive DFS method to check each path for validity
     public boolean simulate(String input, Stack stack) {
-        generateAllPaths(startState, input);
+        if (generateAllPaths(startState, input).size() >= 1) {
+            System.out.println("true");
+            return true;
+        }
         return false;
     }
 
@@ -65,11 +72,6 @@ public class PDA {
     // to check if our stack matches the transition condition
     public char checkTop() {
         return (char) stack.peek();
-    }
-
-    public boolean simulate(String input) {
-
-        return false;
     }
 
 }
