@@ -50,14 +50,16 @@ public class Main {
         PDAState q5 = new PDAState("Q5", false);
 
         q0.addTransition('f', ' ', q1, "Z");
+        q0.addTransition('f', ' ', q1, "Q");
         q1.addTransition('c', ' ', q2, "A");
-        q2.addTransition('b', ' ', q3, "");
-        q3.addTransition('b', ' ', q5, "");
+        q2.addTransition('b', 'A', q3, "");
+        q3.addTransition('b', 'Z', q5, "");
         q4.addTransition('b', ' ', q2, "");
+        q5.addTransition('b', 'c', q0, "");
 
         PDA pda = new PDA(q0, 'c');
 
-        pda.simulate("fcbbb", stack);
+        pda.simulate("fcbbb");
 
     }
 
