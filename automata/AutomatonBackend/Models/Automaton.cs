@@ -9,7 +9,7 @@
         public int Type { get; set; } // 0 = DFA, 1 = NFA, 2 = PDA
         public List<State> States { get; set; }
         public List<PDAState> pdaStates { get; set; }
-        // public List<Transition> Transitions { get; set; }
+        
         public List<string> Inputs { get; set; }
     }
 
