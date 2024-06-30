@@ -30,7 +30,7 @@ public class PDA
 
         if (index == input.Length)
         {
-            if (stack.Count == 0 || stack.Peek() == startSymbol)
+            if (stack.Count == 0 || stack.Peek() == startSymbol) // if the bottom of our stack is our start symbol or empty and our input is finished
             {
                 allPaths.Add(new List<PDAState>(currPath));
                 Console.WriteLine("Valid Path found");
