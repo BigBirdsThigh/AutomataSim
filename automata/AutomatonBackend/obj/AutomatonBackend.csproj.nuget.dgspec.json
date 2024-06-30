@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj": {}
+    "C:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj": {
+    "C:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj",
+        "projectUniqueName": "C:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj",
         "projectName": "AutomatonBackend",
-        "projectPath": "c:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj",
+        "projectPath": "C:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\AutomatonBackend.csproj",
         "packagesPath": "C:\\Users\\Zack Brown\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\obj\\",
+        "outputPath": "C:\\Users\\Zack Brown\\OneDrive - Heriot-Watt University\\Desktop\\AUTOMATSIM\\automata\\AutomatonBackend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Zack Brown\\AppData\\Roaming\\NuGet\\NuGet.Config",
