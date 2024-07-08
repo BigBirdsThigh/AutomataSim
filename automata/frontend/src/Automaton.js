@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createState, deleteState, createTransition, simDFA, simNFA } from './HttpRequests'
+import Transition from './Transition';
 import './tailwind.css';
 
 const Automaton = () => {
@@ -11,12 +13,16 @@ const Automaton = () => {
   const [type, setType] = useState(true);
   const[transType, setTransType] = useState(false);
   const [transitions, setTransitions] = useState([]);
+  const [PDATransitions, setPDATransitions] = useState([]);
+  const[currTransition, setCurrTransition] = useState();
 
 
   const [inputChar, setInputChar] = useState('')
   const[stateTo, setStateTo] = useState("");
   const[stateFrom, setStateFrom] = useState("");
   const[validateString, setValidateString] = useState("")
+  const[pop, setPop] = useState('')
+  const[push, setPush] = useState("")
   const[acceptState, setAcceptState] = useState(false); 
   const[state, selectState] = useState("")  
 
@@ -28,96 +34,86 @@ const Automaton = () => {
   }, [type, states, PDAstates]);
 
 
+
   const changeAcceptState = () => {    
     setAcceptState(!acceptState)
     // console.log(acceptState)
   }
 
   const handleCreateState = async () => {
-
-    const newStateName = type ?  "q" + states.length : "q" + PDAstates.length;    
-
-    // Data packet
-    const stateData = JSON.stringify({
-      Type: type,
-      IsAcceptState: acceptState,
-      Name: newStateName
-    });
-    
-
-  // http endpoint
-  const stateCreate = new XMLHttpRequest();
-  stateCreate.open("POST", "https://localhost:7238/api/auto/createState");
-  stateCreate.setRequestHeader("Content-Type", "application/json; charset=UTF-8")
-
-  // validity check
-  stateCreate.onload = () => {
-    if(stateCreate.readyState === 4 && stateCreate.status === 200){ // valid response?
-      console.log(JSON.parse(stateCreate.responseText));
-      setResponseMessage(`State Created: ${JSON.parse(stateCreate.responseText)}`);
-      // Add the new state to the states array
-      if(type){
-        setStates((prevStates) => [...prevStates, newStateName]);
-      }else{
-        setPDAStates((prevStates) => [...prevStates, newStateName]);
-      }
+    try {
+      const { response } = await createState(type, acceptState, states, PDAstates);
       
-    } else{
-      console.log(`ERROR: ${stateCreate.status}`);
-      setResponseMessage(`Error Creating State: ${stateCreate.status}`);
+      const name = JSON.parse(JSON.stringify(response))
+      setResponseMessage(`State Created: ${name.response}`);
+      
+      console.log(name.response)
+      if(type){
+        setStates((prevStates) => [...prevStates, name.response]);
+      }else{
+        setPDAStates((prevStates) => [...prevStates, name.response]);
+      }
+    } catch (error) {
+      setResponseMessage(error.message);
     }
-  };
-    
-    console.log(states);
-    stateCreate.send(stateData); // Send data
-
   };
 
 
   const handleDeleteState = async () => {
-    
-    const deleteState = state    
-    // console.log(type)
-
-    if (states.length === 0) {
-      setResponseMessage('No states to delete.');
-      return;
-    }
-
-    const stateData = JSON.stringify({
-      Type: type,
-      IsAcceptState: acceptState,
-      Name: deleteState
-    }) 
-    console.log(stateData)
-
-    // Http Endpoint
-    const stateDelete = new XMLHttpRequest();
-    stateDelete.open("POST", "https://localhost:7238/api/auto/deleteState");
-    stateDelete.setRequestHeader("Content-Type", "application/json; charset=UTF-8")
-
-    // validity check
-    stateDelete.onload = () => {
-      if(stateDelete.readyState === 4 && stateDelete.status === 200){ // valid response?
-        console.log(JSON.parse(stateDelete.responseText));
-        setResponseMessage(`State Deleted: ${JSON.parse(stateDelete.responseText)}`);
-        // Remove the state from the array
-        if(type){
-          setStates((prevStates) => prevStates.filter(state => state !== deleteState));
-        }else{
-          setPDAStates((prevStates) => prevStates.filter(state => state !== deleteState));
-        }
-        
-      } else{
-        console.log(`ERROR: ${stateDelete.status}`);
-        setResponseMessage(`Error Creating State: ${stateDelete.status}`);
+    try {
+      const response = await deleteState(type, state);
+      setResponseMessage(`State Deleted: ${response.Message}`);
+      if(type){
+        setStates((prevStates) => prevStates.filter(s => s !== state));
+      } else {
+        setPDAStates((prevStates) => prevStates.filter(s => s !== state));
       }
-    };
+    } catch (error) {
+      setResponseMessage(error.message);
+    }
+  };
 
-    console.log(states);
-    stateDelete.send(stateData); // Send data
+  const handleCreateTransition = async () =>{
+    try {          
+      // console.log(stateTo, stateFrom)
+      const {response, transition} = await createTransition(type, stateTo, stateFrom, push, pop, inputChar);      
+      setResponseMessage(`Transition Created: ${response.Message}`);
+      const transitionString = transition.toString();
+      
+      if(type){
+        setTransitions((prevStates) => [...prevStates, transitionString])              
+      }else{        
+        setPDATransitions((prevStates) => [...prevStates, transitionString])        
+      }
 
-    };
+    } catch(error){
+      setResponseMessage(error.message);
+    }
+  }
+
+  const handleDFASim = async () => {
+    try{
+      const response = await simDFA(validateString)
+      setResponseMessage(response.result);
+      console.log(response.path);    
+    } catch(error){
+      setResponseMessage(error.message)
+    }    
+  }
+
+  const handleNFASim = async () => {
+    try{
+      const response = await simNFA(validateString)
+      setResponseMessage(response.result)
+      console.log(response.tree);
+    } catch(error){
+      setResponseMessage(error.message)
+    }
+  }
+
+  const handleDeleteTransition = async () => {
+    console.log(currTransition)
+  }
 
   
 
@@ -151,7 +147,7 @@ const Automaton = () => {
             
             <div className="relative z-0 w-full mb-5 group">
             <label htmlFor="transitions" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">Select your transition</label>
-              <select id="transitions" className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+              <select id="transitions" onChange={(e) => setCurrTransition(e.target.value)} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                 {transitions.map((transition, index) => (
                   <option key={index} value={transition}>{transition}</option>
                 ))}
@@ -176,16 +172,8 @@ const Automaton = () => {
             </div>   
 
             <div className="grid md:grid-cols-2 md:gap-6">
-              <div className="relative z-0 w-full mb-5 group">
-              <label htmlFor="to" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">to</label>
-                <select id="to" onChange={(e) => setStateTo(e.target.value)} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                  {states.map((state, index) => (
-                    <option key={index} value={state}>{state}</option>
-                  ))}                
-                  </select>
-              </div>
-
-              <div className="relative z-0 w-full mb-5 group">
+            
+            <div className="relative z-0 w-full mb-5 group">
               <label htmlFor="from" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">from</label>
                 <select id="from" onChange={(e) => setStateFrom(e.target.value)} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                   {states.map((state, index) => (
@@ -193,6 +181,15 @@ const Automaton = () => {
                   ))}              
                 </select>
               </div>
+
+              <div className="relative z-0 w-full mb-5 group">
+              <label htmlFor="to" className="block mb-2 text-sm font-medium text-gray-900 dark:text-black">to</label>
+                <select id="to" onChange={(e) => setStateTo(e.target.value)} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                  {states.map((state, index) => (
+                    <option key={index} value={state}>{state}</option>
+                  ))}                
+                  </select>
+              </div>              
               
               <div className="relative z-0 w-full mb-5 group">
                 <input type="text" id="large-input" maxLength={'1'} onChange={(e) => setInputChar(e.target.value)} placeholder='input char' class="block w-full p-4 text-black-900 border border-white-300 rounded-lg bg-black-50 text-base focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-300 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"></input>
@@ -241,7 +238,7 @@ const Automaton = () => {
             className={`${effect && "animate-wiggle"} bg-blue-500 p-4 text-white rounded hover:bg-blue-700 hover:shadow-xl m-4`}
             onClick={() => {
               setEffect(true);
-              handleCreateState();  // Call this function when the button is clicked
+              handleCreateTransition(); // Call this function when the button is clicked
             }}
             onAnimationEnd={() => setEffect(false)}
           >
@@ -253,11 +250,33 @@ const Automaton = () => {
             className={`${effect && "animate-wiggle"} bg-red-500 p-4 text-white rounded hover:bg-red-700 hover:shadow-xl ml-2 m-4`}
             onClick={() => {
               setEffect(true);
-              handleDeleteState();  // Call this function when the button is clicked
+              handleDeleteTransition();  // Call this function when the button is clicked
             }}
             onAnimationEnd={() => setEffect(false)}
           >
             Delete Transition
+          </button>
+
+          <button
+            className={`${effect && "animate-wiggle"} bg-green-500 p-4 text-white rounded hover:bg-red-700 hover:shadow-xl ml-2 m-4`}
+            onClick={() => {
+              setEffect(true);
+              handleDFASim();  // Call this function when the button is clicked
+            }}
+            onAnimationEnd={() => setEffect(false)}
+          >
+            Simulate
+          </button>
+
+          <button
+            className={`${effect && "animate-wiggle"} bg-green-500 p-4 text-white rounded hover:bg-red-700 hover:shadow-xl ml-2 m-4`}
+            onClick={() => {
+              setEffect(true);
+              handleNFASim();  // Call this function when the button is clicked
+            }}
+            onAnimationEnd={() => setEffect(false)}
+          >
+            SimulateNFA
           </button>
 
 
