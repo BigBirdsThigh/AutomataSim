@@ -132,8 +132,8 @@ const Automaton = () => {
         <p>{responseMessage}</p>
       </div>
       <div className="canvas-container" style={{ flexGrow: 1, border: '2px solid black', backgroundColor: 'lightgrey', position: 'relative' }}>
-        {/* ToDO: Make the canvas it's own JS element that out main page will interact with */}
-        {/* Possible hashmap states to coordinates and when we add transitions just getValue on the hashmap for our state */}
+        {/* ToDO: Make the canvas it's own JS element that our main page will interact with */}
+        {/* Possibly hashmap states to coordinates and when we add transitions just getValue on the hashmap for our state */}
         <Stage width={window.innerWidth} height={window.innerHeight} ref={stageRef}>
           <Layer>
             <Text
