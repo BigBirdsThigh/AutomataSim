@@ -12,11 +12,13 @@ class Graph {
     }
 
     removeVertex(v){
-        let filterOut = v
-        this.AdjList.forEach((value, key) => {
-            let filteredMap = value.filter(vertex => vertex !== filterOut);
-            this.AdjList.set(key, filteredMap)
-        })
+        this.AdjList.get(v).forEach(adjVertex => {
+            this.AdjList.set(adjVertex, this.AdjList.get(adjVertex).filter(vertex => vertex !== v));
+        });
+
+        // Remove the vertex from the adjacency list and vertices array
+        this.AdjList.delete(v);
+        this.vertices = this.vertices.filter(vertex => vertex !== v);
 
     }
 
