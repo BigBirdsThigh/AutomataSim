@@ -1,43 +1,38 @@
 import Transition from './Transition';
 
-export const createState = async (type, acceptState, states, PDAstates) => {
+const apiUrl = "http://localhost:5027/api/auto"; // Using HTTP for simplicity
 
-    
-
-  // Data packet
+export const createState = async (type, acceptState) => {
   const stateData = JSON.stringify({
       Type: type,
       IsAcceptState: acceptState,
-      // Name: newStateName
   });
 
-  // HTTP endpoint
+  console.log("Sending state data:", stateData);
+
   const stateCreate = new XMLHttpRequest();
-  stateCreate.open("POST", "https://localhost:7238/api/auto/createState");
+  stateCreate.open("POST", `${apiUrl}/createState`);
   stateCreate.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
-  // Promise-based handling for async behavior
   return new Promise((resolve, reject) => {
       stateCreate.onload = () => {
+          console.log("State create request completed with status:", stateCreate.status);
           if (stateCreate.readyState === 4 && stateCreate.status === 200) {
-              const newStateName = JSON.parse(stateCreate.responseText);
+              console.log("State created successfully:", stateCreate.responseText);
               resolve({ response: JSON.parse(stateCreate.responseText) });
           } else {
+              console.error("Error Creating State:", stateCreate.status, stateCreate.responseText);
               reject(new Error(`Error Creating State: ${stateCreate.status}`));
           }
       };
 
-      stateCreate.onerror = () => reject(new Error('Network error occurred'));
-      stateCreate.send(stateData); // Send data
+      stateCreate.onerror = () => {
+          console.error('Network error occurred');
+          reject(new Error('Network error occurred'));
+      };
+      stateCreate.send(stateData);
   });
 };
-
-
-
-// export const deleteState(type, state)
-
-
-
 
 export const deleteState = async (type, stateName) => {
     const stateData = JSON.stringify({
@@ -47,7 +42,7 @@ export const deleteState = async (type, stateName) => {
 
     // HTTP Endpoint
     const stateDelete = new XMLHttpRequest();
-    stateDelete.open("POST", "https://localhost:7238/api/auto/deleteState");
+    stateDelete.open("POST", `${apiUrl}/deleteState`);
     stateDelete.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
     // Promise-based handling for async behavior
@@ -68,55 +63,50 @@ export const deleteState = async (type, stateName) => {
 export const simDFA = async (input) => {
   const dfaData = JSON.stringify({
     Inputs: [input]
-  })
-    // HTTP endpoint
-    const simDFA = new XMLHttpRequest();
-    simDFA.open("POST", "https://localhost:7238/api/auto/SimDFA");
-    simDFA.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-  
-    return new Promise((resolve, reject) => {
-      simDFA.onload = () => {
-        if (simDFA.readyState === 4 && simDFA.status === 200) {
-          const response = JSON.parse(simDFA.responseText);          
+  });
 
-          resolve(response);
-        } else {
-          reject(new Error(`Error Creating Transition: ${simDFA.status}`));
-        }
+  const simDFA = new XMLHttpRequest();
+  simDFA.open("POST", `${apiUrl}/SimDFA`);
+  simDFA.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+
+  return new Promise((resolve, reject) => {
+      simDFA.onload = () => {
+          if (simDFA.readyState === 4 && simDFA.status === 200) {
+              const response = JSON.parse(simDFA.responseText);
+              resolve(response);
+          } else {
+              reject(new Error(`Error Simulating DFA: ${simDFA.status}`));
+          }
       };
-      
+
       simDFA.onerror = () => reject(new Error('Network error occurred'));
       simDFA.send(dfaData);
-    });
-
-
-}
+  });
+};
 
 export const simNFA = async (input) => {
   const nfaData = JSON.stringify({
     Inputs: [input]
-  })
+  });
+
   const simNFA = new XMLHttpRequest();
-  simNFA.open("POST", "https://localhost:7238/api/auto/SimNFA")
+  simNFA.open("POST", `${apiUrl}/SimNFA`);
   simNFA.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
   return new Promise((resolve, reject) => {
-    simNFA.onload = () => {
-      if(simNFA.readyState === 4 && simNFA.status === 200){
-        const response = JSON.parse(simNFA.responseText);
+      simNFA.onload = () => {
+          if (simNFA.readyState === 4 && simNFA.status === 200) {
+              const response = JSON.parse(simNFA.responseText);
+              resolve(response);
+          } else {
+              reject(new Error(`Error Simulating NFA: ${simNFA.status}`));
+          }
+      };
 
-        resolve(response);        
-      }else{
-        reject(new Error(`error simulating nfa: ${simNFA.status}`));        
-      }
-    };
-    simNFA.onerror = () => reject(new Error("Network Error Occured"));
-    simNFA.send(nfaData);
+      simNFA.onerror = () => reject(new Error('Network error occurred'));
+      simNFA.send(nfaData);
   });
-
-  
-}
-
+};
 
 export const createTransition = async (type, to, from, push, pop, input) => {
   let transData;
@@ -145,26 +135,24 @@ export const createTransition = async (type, to, from, push, pop, input) => {
 
   // HTTP endpoint
   const createTrans = new XMLHttpRequest();
-  createTrans.open("POST", "https://localhost:7238/api/auto/createTransition");
+  createTrans.open("POST", `${apiUrl}/createTransition`);
   createTrans.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
   return new Promise((resolve, reject) => {
-    createTrans.onload = () => {
-      if (createTrans.readyState === 4 && createTrans.status === 200) {
-        const response = JSON.parse(createTrans.responseText);
-        const transition = new Transition(to, from, input);
-        resolve({ response, transition });
-      } else {
-        reject(new Error(`Error Creating Transition: ${createTrans.status}`));
-      }
-    };
+      createTrans.onload = () => {
+          if (createTrans.readyState === 4 && createTrans.status === 200) {
+              const response = JSON.parse(createTrans.responseText);
+              const transition = new Transition(to, from, input);
+              resolve({ response, transition });
+          } else {
+              reject(new Error(`Error Creating Transition: ${createTrans.status}`));
+          }
+      };
 
-    createTrans.onerror = () => reject(new Error('Network error occurred'));
-    createTrans.send(transData);
+      createTrans.onerror = () => reject(new Error('Network error occurred'));
+      createTrans.send(transData);
   });
 };
-
-
 
 function replaceWithEpsilon(value) {
   return value.trim() === '' ? 'ϵ' : value;

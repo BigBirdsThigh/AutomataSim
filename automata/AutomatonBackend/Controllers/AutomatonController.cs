@@ -13,6 +13,7 @@ public class AutomatonController : ControllerBase
         private static readonly Dictionary<string, PDAState> PDAStates = new Dictionary<string, PDAState>();
         private static readonly Dictionary<string, List<Transition>> transitions = new Dictionary<string, List<Transition>>();
         private static readonly Dictionary<string, List<PDAState>> PDAtransitions = new Dictionary<string, List<PDAState>>();
+        private static int stateCounter = 0;
 
     public AutomatonController(ILogger<AutomatonController> logger)
     {
@@ -22,64 +23,61 @@ public class AutomatonController : ControllerBase
 
 
 
- [HttpPost("createState")]
-public IActionResult CreateState([FromBody] StateCreate state)
-{
-    _logger.LogInformation("Received request to create state");
-
-    try
+   [HttpPost("createState")]
+    public IActionResult CreateState([FromBody] StateCreate state)
     {
-        string namePass = "q" + (state.Type ? states.Count : PDAStates.Count);
-        // string newStateName = "q" + (state.Type ? states.Count : PDAStates.Count);
-        if (state.Type)
-        {
-            // DFA state
-            // DFA state
-            int stateNum = states.Count;
-            string newStateName = "q" + stateNum;
-            states.Add(newStateName, new State(newStateName, state.IsAcceptState));
-            _logger.LogInformation("Added DFA state: {Name}", newStateName);
-        }
-        else
-        {
-            // PDA state                  
-            int stateNum = PDAStates.Count;
-            string newStateName = "q" + stateNum;
-            PDAStates.Add(newStateName, new PDAState(newStateName, state.IsAcceptState));
-            _logger.LogInformation("Added PDA state: {Name}", newStateName);
-        }
+        _logger.LogInformation("Received request to create state");
 
-        return Ok(new { Response = JsonSerializer.Serialize(namePass) });
+        try
+        {
+            string namePass = "q" + stateCounter++;
+            if (state.Type)
+            {
+                states.Add(namePass, new State(namePass, state.IsAcceptState));
+                _logger.LogInformation("Added DFA state: {Name}", namePass);
+            }
+            else
+            {
+                PDAStates.Add(namePass, new PDAState(namePass, state.IsAcceptState));
+                _logger.LogInformation("Added PDA state: {Name}", namePass);
+            }
+
+            return Ok(new { Response = namePass });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating state");
+            return StatusCode(500, "Internal Server Error");
+        }
     }
-    catch (Exception ex)
+
+    [HttpPost("deleteState")]
+    public IActionResult DeleteState([FromBody] StateDelete state)
     {
-        _logger.LogError(ex, "Error creating state");
-        return StatusCode(500, "Internal Server Error");
-    }
-}
+        _logger.LogInformation("Received request to delete state");
 
-
-[HttpPost("deleteState")]
-public IActionResult DeleteState([FromBody] StateDelete state){
-    
-    _logger.LogInformation("Received request to delete state");
-    
-    try {
-        if(state.Type){
-            states.Remove(state.Name);
-            _logger.LogInformation("Deleted State: {Name}", state.Name);
-        } else{
-            PDAStates.Remove(state.Name);
-            _logger.LogInformation("Deleted State: {Name}", state.Name);
-        } 
-        return Ok(new { Message = "State deleted successfully" });
+        try
+        {
+            if (state.Type)
+            {
+                states.Remove(state.Name);
+                _logger.LogInformation("Deleted State: {Name}", state.Name);
+                stateCounter--;
+            }
+            else
+            {
+                PDAStates.Remove(state.Name);
+                _logger.LogInformation("Deleted State: {Name}", state.Name);
+                stateCounter--;
+            }
+            return Ok(new { Message = "State deleted successfully" });
         }
-    catch(Exception ex){
-        _logger.LogError(ex, "Error deleting state");
-        return StatusCode(500, "Internal Server Error");
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting state");
+            return StatusCode(500, "Internal Server Error");
+        }
     }
-        
-}
 
 [HttpPost("SimDFA")]
 public IActionResult SimulateDfa([FromBody] AutomatonData input)
