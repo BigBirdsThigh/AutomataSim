@@ -58,11 +58,17 @@ const Automaton = () => {
 
   const changeAcceptState = () => {
     setAcceptState(!acceptState);
+    console.log(acceptState)
+  };
+
+  const handleInputChange = (event) => {
+    setValidateString(event.target.value); // Update validateString state with input value
+    console.log(validateString)
   };
 
   const handleCreateState = async () => {
     try {
-      const { response } = await createState(true, false, states, []);
+      const { response } = await createState(true, acceptState, states, []);
       const name = response.response;
       const position = {
         x: Math.random() * (window.innerWidth - 500) + 50,
@@ -105,13 +111,7 @@ const Automaton = () => {
         );
 
         setPDAStates((prevStates) => prevStates.slice(0, -1));
-      }
-      
-  
-      
-  
-      
-      
+      }        
   
       positions.current.delete(deletedState);
       coloursRef.current.delete(deletedState);
@@ -212,6 +212,9 @@ const Automaton = () => {
         <button type="button" onClick={handleCreateState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Create State</button>
         <button type="button" onClick={handleDeleteState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete State</button>
         <button type="button" onClick={handleDeleteTransition} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete Transition</button>
+        <button type="button" onClick={handleDFASim} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Sim DFA</button>
+        <button type="button" onClick={changeAcceptState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Set Accept State</button>
+        <input type="text" value = {validateString} onChange={handleInputChange} id="first_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="John" required />
         <p>{responseMessage}</p>
       </div>
       <div className="canvas-container" style={{ flexGrow: 1, border: '2px solid black', backgroundColor: 'lightgrey', position: 'relative' }}>
