@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createState, deleteState, createTransition, simDFA, simNFA } from './HttpRequests';
+import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition } from './HttpRequests';
 import './tailwind.css';
 import { Stage, Layer, Circle } from 'react-konva';
+import Canvas from './Canvas';
 import colours from './colours'; // Import the colours function
+import Modal from './Modal'
 
 const Automaton = () => {
   const [responseMessage, setResponseMessage] = useState('');
@@ -18,6 +20,8 @@ const Automaton = () => {
   const [validateString, setValidateString] = useState('');
   const [pop, setPop] = useState('');
   const [push, setPush] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedState, setSelectedState] = useState(null);
   const [acceptState, setAcceptState] = useState(false);
   const [state, selectState] = useState('');
 
@@ -58,21 +62,17 @@ const Automaton = () => {
 
   const handleCreateState = async () => {
     try {
-      const { response } = await createState(type, acceptState, states, PDAstates);
+      const { response } = await createState(true, false, states, []);
       const name = response.response;
       const position = {
-        x: Math.random() * (window.innerWidth - 100) + 50,
-        y: Math.random() * (window.innerHeight - 100) + 50,
+        x: Math.random() * (window.innerWidth - 500) + 50,
+        y: Math.random() * (window.innerHeight - 200) + 50,
       };
       const color = getColour();
       positions.current.set(name, position);
       coloursRef.current.set(name, color);
       setResponseMessage(`State Created: ${name}`);
-      if (type) {
-        setStates((prevStates) => [...prevStates, name]);
-      } else {
-        setPDAStates((prevStates) => [...prevStates, name]);
-      }
+      setStates((prevStates) => [...prevStates, name]);
     } catch (error) {
       setResponseMessage(error.message);
     }
@@ -80,41 +80,96 @@ const Automaton = () => {
 
   const handleDeleteState = async () => {
     try {
+      let deletedState;
       if (type) {
         const lastState = states[states.length - 1];
         const response = await deleteState(type, lastState);
         setResponseMessage(`State Deleted: ${response.Message}`);
-        positions.current.delete(lastState);
-        coloursRef.current.delete(lastState);
-        setStates((prevStates) => prevStates.slice(0, -1));
+        deletedState = lastState;
+        setStates((prevStates) => prevStates.slice(0, -1));        
+
+        // Filter out transitions involving the deleted state
+        setTransitions((prevTransitions) =>
+          prevTransitions.filter((transition) => transition.from !== deletedState && transition.to !== deletedState)
+        );
+
       } else {
         const lastState = PDAstates[PDAstates.length - 1];
         const response = await deleteState(type, lastState);
         setResponseMessage(`State Deleted: ${response.Message}`);
-        positions.current.delete(lastState);
-        coloursRef.current.delete(lastState);
+        
+        deletedState = lastState;
+
+        setPDATransitions((prevTransitions) =>
+          prevTransitions.filter((transition) => transition.from !== deletedState && transition.to !== deletedState)
+        );
+
         setPDAStates((prevStates) => prevStates.slice(0, -1));
       }
-    } catch (error) {
-      setResponseMessage(error.message);
-    }
-  };  
+      
   
-
-  const handleCreateTransition = async () => {
-    try {
-      const { response, transition } = await createTransition(type, stateTo, stateFrom, push, pop, inputChar);
-      setResponseMessage(`Transition Created: ${response.Message}`);
-      const transitionString = transition.toString();
-      if (type) {
-        setTransitions((prevStates) => [...prevStates, transitionString]);
-      } else {
-        setPDATransitions((prevStates) => [...prevStates, transitionString]);
-      }
+      
+  
+      
+      
+  
+      positions.current.delete(deletedState);
+      coloursRef.current.delete(deletedState);
     } catch (error) {
       setResponseMessage(error.message);
     }
   };
+  
+  
+  
+ 
+  const updateTransitionPositions = () => {
+    setTransitions((prevTransitions) =>
+      prevTransitions.map((transition) => {
+        const fromPos = positions.current.get(transition.from);
+        const toPos = positions.current.get(transition.to);
+        return { ...transition, from: fromPos, to: toPos };
+      })
+    );
+  };
+  
+
+ 
+  const handleCreateTransition = async ({ stateTo, stateFrom, push, pop, inputChar }) => {
+    try {
+      const { response, transition } = await createTransition(type, stateTo, stateFrom, push, pop, inputChar);
+      setResponseMessage(`Transition Created: ${response.Message}`);
+      const transitionObject = { from: stateFrom, to: stateTo, input: inputChar };
+      if (type) {
+        setTransitions((prevStates) => [...prevStates, transitionObject]);
+      } else {
+        setPDATransitions((prevStates) => [...prevStates, transitionObject]);
+      }
+      handleCloseModal(); // Close the modal after creating the transition
+    } catch (error) {
+      setResponseMessage(error.message);
+    }
+  };
+
+  const handleDeleteTransition = async ({stateTo, stateFrom, push, pop, inputChar}) => {
+    try{
+      const {response, transition} = await deleteTransition(type, stateTo, stateFrom, push, pop, inputChar)
+      setResponseMessage(`Transition Deleted: ${response.message}`)
+      const transitionObject = {from: stateFrom, to: stateTo, input: inputChar }
+      if(type){
+        setTransitions((prevTransitions) =>
+          prevTransitions.filter((transition) => transition.from !== stateFrom, transition.to !== stateTo, transition.input !== inputChar)
+        );
+      }else{
+        setTransitions((prevTransitions) =>
+          prevTransitions.filter((transition) => transition.from !== stateFrom, transition.to !== stateTo, transition.input !== inputChar)
+      );
+      }
+    } catch(error) {
+      setResponseMessage(error.message)
+    }
+  };
+
 
   const handleDFASim = async () => {
     try {
@@ -136,46 +191,49 @@ const Automaton = () => {
     }
   };
 
-  const handleDeleteTransition = async () => {
-    console.log(currTransition);
+
+
+  const handleOpenModal = (state) => {
+    setSelectedState(state);
+    setIsModalOpen(true);
+  };
+  
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedState(null);
   };
 
-  const LAYER_WIDTH = window.innerWidth - 200; // Adjust the value as needed
-  const LAYER_HEIGHT = window.innerHeight - 200; // Adjust the value as needed
+  const LAYER_WIDTH = window.innerWidth - 400; 
+  const LAYER_HEIGHT = window.innerHeight - 200; 
 
   return (
-    <div className="container" ref={containerRef} style={{ display: 'flex', height: '98vh', padding: '10px', paddingTop: '15px', boxSizing: 'border-box' }}>
+    <div className="container" style={{ display: 'flex', height: '98vh', padding: '10px', paddingTop: '15px', boxSizing: 'border-box' }}>
       <div className="controls" style={{ flex: '0 0 20%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '65px' }}>
-        <button type="button" onClick={handleCreateState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 w-1/2">Create State</button>
-        <button type="button" onClick={handleDeleteState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 w-1/2">Delete State</button>
-        <button type="button" onClick={handleCreateTransition} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 w-1/2">Create Transition</button>
-        <button type="button" onClick={handleDeleteTransition} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 w-1/2">Delete Transition</button>
-        <button type="button" onClick={handleDFASim} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 w-1/2">Simulate DFA</button>
-        <button type="button" onClick={handleNFASim} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 w-1/2">Simulate NFA</button>
+        <button type="button" onClick={handleCreateState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Create State</button>
+        <button type="button" onClick={handleDeleteState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete State</button>
+        <button type="button" onClick={handleDeleteTransition} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete Transition</button>
         <p>{responseMessage}</p>
       </div>
       <div className="canvas-container" style={{ flexGrow: 1, border: '2px solid black', backgroundColor: 'lightgrey', position: 'relative' }}>
-        <Stage width={window.innerWidth} height={window.innerHeight} ref={stageRef}>
-          <Layer>
-            {states.map((state) => (
-              <Circle
-                key={state}
-                x={positions.current.get(state).x}
-                y={positions.current.get(state).y}
-                radius={20}
-                fill={coloursRef.current.get(state)} // Use stored color
-                draggable
-                onDragEnd={(e) => {
-                  const newPos = { x: e.target.x(), y: e.target.y() };
-                  positions.current.set(state, newPos);
-                }}                
-              />
-            ))}
-          </Layer>
-        </Stage>
+        <Canvas
+          states={states}
+          transitions={transitions}
+          positions={positions}
+          coloursRef={coloursRef}
+          onCircleClick={handleOpenModal}
+          updateTransitionPositions={updateTransitionPositions}
+        />
+        <Modal
+           isOpen={isModalOpen}
+           onClose={handleCloseModal}
+           title="State Details"
+           selectedState={selectedState} // Pass the selected state  
+           onCreateTransition={handleCreateTransition}
+        />
       </div>
     </div>
   );
+  
   
 };
 

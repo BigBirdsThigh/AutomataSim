@@ -154,6 +154,54 @@ export const createTransition = async (type, to, from, push, pop, input) => {
   });
 };
 
+
+
+export const deleteTransition = async(type, to, from, push, pop, input) => {
+  let transData;
+
+  if(type){
+    transData = JSON.stringify({
+      Type: type,
+      From: from.replace(/"/g, ''), // remove extra quotes
+      Input: replaceWithEpsilon(input),
+      To: to.replace(/"/g, ''), // remove extra quotes
+      Pop: " ",
+      Push: " "
+    })
+  } else {
+    transData = JSON.stringify({
+      Type: type,
+      From: from.replace(/"/g, ''), // remove extra quotes
+      Input: replaceWithEpsilon(input),
+      To: to.replace(/"/g, ''), // remove extra quotes
+      Pop: pop,
+      Push: push
+    });
+  }
+
+  // HTTP endpoint
+  const deleteTrans = new XMLHttpRequest();
+  deleteTrans.open("POST", `${apiUrl}/deleteTransition`);
+  deleteTrans.setRequestHeader("Content-Type", "application/json; charset=UTF-8");  
+
+  return new Promise((resolve, reject) => {
+    deleteTrans.onload = () => {
+      if(deleteTrans.readyState === 4 && deleteTrans.status === 200){
+        const response = JSON.parse(deleteTrans.responseText);
+        const transition = new Transition(to, from, input);
+        resolve({ response, transition });
+      }else{
+        reject(new Error(`Error deleting transition ${deleteTrans.status}`));
+      }
+
+      deleteTrans.onerror = () => {reject(new Error(`Network error occurred`))}
+        deleteTrans.send(transData);
+      
+    }
+  })
+
+}
+
 function replaceWithEpsilon(value) {
   return value.trim() === '' ? 'ϵ' : value;
 }

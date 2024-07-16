@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
@@ -30,10 +31,11 @@ public class AutomatonController : ControllerBase
 
         try
         {
-            string namePass = "q" + stateCounter++;
+            string namePass = "q" + stateCounter++; // name of state e.g q1, q2, ...
+
             if (state.Type)
             {
-                states.Add(namePass, new State(namePass, state.IsAcceptState));
+                states.Add(namePass, new State(namePass, state.IsAcceptState)); // create a new state and map it to a name
                 _logger.LogInformation("Added DFA state: {Name}", namePass);
             }
             else
@@ -51,33 +53,106 @@ public class AutomatonController : ControllerBase
         }
     }
 
-    [HttpPost("deleteState")]
-    public IActionResult DeleteState([FromBody] StateDelete state)
-    {
-        _logger.LogInformation("Received request to delete state");
+[HttpPost("deleteState")]
+public IActionResult DeleteState([FromBody] StateDelete state)
+{
+    _logger.LogInformation("Received request to delete state");
 
-        try
+    try
+    {
+        if (state.Type)
         {
-            if (state.Type)
+            if (states.TryGetValue(state.Name, out var stateToRemove)) // check if a state exists with our name
             {
-                states.Remove(state.Name);
-                _logger.LogInformation("Deleted State: {Name}", state.Name);
+                // Remove state from transitions in other states
+                foreach (var kvp in states)
+                {
+                    kvp.Value.RemoveStateFromTransitions(stateToRemove);
+                }
+
+                // Remove transitions where the state being deleted is involved
+                List<string> keysToRemove = new List<string>();
+                foreach (var entry in transitions)
+                {
+                    string[] parts = entry.Key.Split('-');
+                    string from = parts[0];
+                    string input = parts[1];
+                    string to = parts[2];
+
+                    if (from == stateToRemove.Name || to == stateToRemove.Name) // is their a transition containing this state?
+                    {
+                        keysToRemove.Add(entry.Key); // flag it for removal
+                    }
+                }
+
+                foreach (var key in keysToRemove) // loop and remove flagged keys (from our backends transitions dict)
+                {
+                    transitions.Remove(key);
+                }
+
+                // Remove the state from the states dictionary
+                states.Remove(stateToRemove.Name);
+                _logger.LogInformation("Deleted State: {Name}", stateToRemove.Name);
                 stateCounter--;
             }
             else
             {
-                PDAStates.Remove(state.Name);
-                _logger.LogInformation("Deleted State: {Name}", state.Name);
+                _logger.LogInformation("State {Name} not found", state.Name);
+                return NotFound(new { Message = "State not found" });
+            }
+        }
+        else
+        {
+            if (PDAStates.TryGetValue(state.Name, out var stateToRemove))
+            {
+                // Remove state from transitions in other states
+                foreach (var kvp in PDAStates)
+                {
+                    // kvp.Value.RemoveStateFromTransitions(stateToRemove);
+                }
+
+                // Remove transitions where the state being deleted is involved
+                List<string> keysToRemove = new List<string>();
+                foreach (var entry in PDAtransitions)
+                {
+                    string[] parts = entry.Key.Split('-');
+                    string from = parts[0];
+                    string input = parts[1];
+                    string to = parts[2];
+
+                    if (from == stateToRemove.Name || to == stateToRemove.Name)
+                    {
+                        keysToRemove.Add(entry.Key);
+                    }
+                }
+
+                foreach (var key in keysToRemove)
+                {
+                    PDAtransitions.Remove(key);
+                }
+
+                // Remove the state from the PDAStates dictionary
+                PDAStates.Remove(stateToRemove.Name);
+                _logger.LogInformation("Deleted State: {Name}", stateToRemove.Name);
                 stateCounter--;
             }
-            return Ok(new { Message = "State deleted successfully" });
+            else
+            {
+                _logger.LogInformation("State {Name} not found", state.Name);
+                return NotFound(new { Message = "State not found" });
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting state");
-            return StatusCode(500, "Internal Server Error");
-        }
+
+        return Ok(new { Message = "State deleted successfully" });
     }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error deleting state");
+        return StatusCode(500, "Internal Server Error");
+    }
+}
+
+
 
 [HttpPost("SimDFA")]
 public IActionResult SimulateDfa([FromBody] AutomatonData input)
@@ -86,16 +161,16 @@ public IActionResult SimulateDfa([FromBody] AutomatonData input)
 
     if (states.ContainsKey("q0"))
     {
-        DFA dfa = new DFA(states.GetValueOrDefault("q0"));
-        // _logger.LogInformation("STATE NAME:", states.GetValueOrDefault("q0").GetNextState('c').First().Name);
-        String test = input.Inputs.FirstOrDefault();
+        DFA dfa = new DFA(states.GetValueOrDefault("q0")); // creates a dfa with start state q0
+        
+        string test = input.Inputs.FirstOrDefault(); // Todo: allow multiple inputs to get fed in
         _logger.LogInformation("Input string to simulate: {test}", test);
         _logger.LogInformation("state {state}", states.GetValueOrDefault("q0"));
 
-        bool result = dfa.Simulate(test);
+        bool result = dfa.Simulate(test); // returns true if our input passed the DFA
 
         _logger.LogInformation(result ? "DFA simulation passed" : "DFA simulation failed");
-        List<String> path = dfa.GetPath();
+        List<string> path = dfa.GetPath(); // DFA contains a function for the path we took so we just return that
 
         return Ok(new { Result = result, Path = path });
     }
@@ -141,14 +216,14 @@ public IActionResult CreateTransition([FromBody] Transition transition)
     {
         if (transition.Type)
         {
-            string key = $"{transition.From}-{transition.Input}-{transition.To}";
+            string key = $"{transition.From}-{transition.Input}-{transition.To}"; // a unique key for our transitions
             _logger.LogInformation("Checking transition key: {key}", key);
 
-            if (!transitions.ContainsKey(key))
+            if (!transitions.ContainsKey(key)) // if the transition does not exist already
             {
-                if (states.TryGetValue(transition.From, out State from) && states.TryGetValue(transition.To, out State to))
+                if (states.TryGetValue(transition.From, out State from) && states.TryGetValue(transition.To, out State to)) // check these states exist
                 {
-                    from.AddTransition(transition.Input, to);
+                    from.AddTransition(transition.Input, to); // add the transition to the state object
                     _logger.LogInformation("Added Transition: From={From}, To={To}, Input={Input}", transition.From, transition.To, transition.Input);
                     transitions[key] = new List<Transition> { new Transition { From = from.Name, To = to.Name, Input = transition.Input } };
                 }

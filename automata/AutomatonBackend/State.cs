@@ -7,7 +7,7 @@ namespace AutomatonBackend.Controllers;
     {
         public string Name { get; private set; }
         public bool IsAcceptState { get; private set; }
-        private Dictionary<char, HashSet<State>> transitions;
+        public Dictionary<char, HashSet<State>> transitions;
 
         public State(string name, bool isAcceptState)
         {
@@ -38,10 +38,23 @@ namespace AutomatonBackend.Controllers;
             return this.transitions.GetValueOrDefault(input, new HashSet<State>());
         }
 
-        // public bool IsAcceptState()
-        // {
-        //     return this.isAcceptState;
-        // }
+      
+    public void RemoveStateFromTransitions(State stateToRemove)
+    {
+        foreach (var charKvp in transitions)
+        {
+            char input = charKvp.Key;
+            HashSet<State> statesHashSet = charKvp.Value;
+
+            statesHashSet.Remove(stateToRemove);
+
+            // Remove the entire char key if the HashSet<State> becomes empty
+            if (statesHashSet.Count == 0)
+            {
+                transitions.Remove(input);
+            }
+        }
+    }
     }
 
 
