@@ -62,6 +62,113 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       fabricCanvas.add(circle);
     };
 
+
+    // Temp line placement system
+    const placeLine = (x1,y1, x2,y2) => {
+         // define what is above, below, left, right and inline
+         let above = y1 -(y2-10) > 0? true: false
+         let below = y1 -(y2+10) > 0? false:true
+         let inline = above === below? true:false
+         let right = (x2-x1)+14 >0? false: true
+         let left = (x2-x1) - 14 > 0? true: false
+
+
+         // detection implementation
+         if(inline){
+         if(right){
+           console.log("points should be on right")
+
+            //  New points on circle 1
+           let n1 = x1 + (20* Math.cos(Math.PI))
+           let z1 = y1 + (20* Math.sin(Math.PI))
+
+          //  New points on circle 2
+
+          let n2 = x2 + (20* Math.cos(2*Math.PI))
+          let z2 = y2 + (20* Math.sin(2*Math.PI))
+
+           return [[n1,z1],[n2,z2]]
+         }else{
+           console.log("points should be on left")
+
+           let n1 = x1 + (20* Math.cos(2*Math.PI))
+           let z1 = y1 + (20* Math.sin(2*Math.PI))
+
+           let n2 = x2 + (20* Math.cos(Math.PI))
+           let z2 = y2 + (20* Math.sin(Math.PI))
+
+           return [[n1,z1],[n2,z2]]
+         }
+       }else if(above){
+         if(right){
+           console.log("points should be on right")
+
+           let n1 = x1 + (20* Math.cos(3*Math.PI/2))
+           let z1 = y1 + (20* Math.sin(3*Math.PI/2))
+
+           let n2 = x2 + (20* Math.cos(2*Math.PI))
+           let z2 = y2 + (20* Math.sin(2*Math.PI))
+
+           return [[n1,z1],[n2,z2]]
+
+         }else if(left){
+           console.log("points should be on left")
+
+           let n1 = x1 + (20* Math.cos(3*Math.PI/2))
+           let z1 = y1 + (20* Math.sin(3*Math.PI/2))
+
+           let n2 = x2 + (20* Math.cos(Math.PI))
+           let z2 = y2 + (20* Math.sin(Math.PI))
+
+           return [[n1,z1],[n2,z2]]
+
+         }else{
+           console.log("points should be on bottom")
+
+           let n1 = x1 + (20* Math.cos((3*Math.PI/2)))
+           let z1 = y1 + (20* Math.sin((3*Math.PI/2)))
+
+           let n2 = x2 + (20* Math.cos(Math.PI/2))
+           let z2 = y2 + (20* Math.sin(Math.PI/2))
+
+           return [[n1,z1],[n2,z2]]
+           
+         }
+       }else if(below){
+         console.log("points should be on top")
+
+         if(right){
+           let n1 = x1 + (20* Math.cos(Math.PI))
+           let z1 = y1 + (20* Math.sin(Math.PI))
+
+           let n2 = x2 + (20* Math.cos(3*(Math.PI/2)))
+           let z2 = y2 + (20* Math.sin(3*(Math.PI/2)))
+
+           return [[n1,z1],[n2,z2]]
+         }else if (left){
+
+
+          let n1 = x1 + (20* Math.cos(2*Math.PI))
+          let z1 = y1 + (20* Math.sin(2*Math.PI))
+
+
+          let n2 = x2 + (20* Math.cos(3*(Math.PI/2)))
+          let z2 = y2 + (20* Math.sin(3*(Math.PI/2)))
+
+           return [[n1,z1],[n2,z2]]
+         }
+
+         let n1 = x1 + (20* Math.cos(Math.PI/2))
+         let z1 = y1 + (20* Math.sin(Math.PI/2))
+
+         let n2 = x2 + (20* Math.cos((3*Math.PI/2)))
+         let z2 = y2 + (20* Math.sin((3*Math.PI/2)))
+
+         return [[n1,z1],[n2,z2]]
+
+       }
+    }
+
     // Function to update lines
     const updateLines = () => {
       // Clear existing lines
@@ -80,25 +187,26 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
           let x2 = toCircle.aCoords.br.x - 20
           let y2 = toCircle.aCoords.br.y - 20
 
+          const [[Nx1, Ny1], [Nx2, Ny2]] = placeLine(x1, y1, x2, y2);
+          console.log(Nx1, Ny1, Nx2, Ny2);
+
           const line = new FabricLine([
-            x1, y1,
-            x2,y2
+            Nx1, Ny1,
+            Nx2,Ny2
           ], {
             stroke: 'black',
             strokeWidth: 2,
             selectable: false,
+            strokeLineCap: 'round',
             id: `line-${index}`, // Assign a unique ID
           });
 
           fabricCanvas.add(line);
           lines.current.set(`line-${index}`, line); // Store line reference
 
-          // define what is above, below, left, right and inline
-          let above = y1 -(y2-10) > 0? true: false
-          let below = y1 -(y2+10) > 0? false:true
-          let inline = above === below? true:false
-          let right = (x2-x1)+14 >0? false: true
-          let left = (x2-x1) - 14 > 0? true: false
+         
+
+
 
           // if(above){
           //   console.log("above")
@@ -131,24 +239,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
           
           // }
 
-          // detection implementation
-          if(inline){
-            if(right){
-              console.log("points should be on right")
-            }else{
-              console.log("points should be on left")
-            }
-          }else if(above){
-            if(right){
-              console.log("points should be on right")
-            }else if(left){
-              console.log("points should be on left")
-            }else{
-              console.log("points should be on bottom")
-            }
-          }else if(below){
-            console.log("points should be on top")
-          }
+       
 
           // if(below){
           //   console.log("points should be on bottom of circle")
