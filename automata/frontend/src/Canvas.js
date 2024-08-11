@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas as FabricCanvas, Circle as FabricCircle, Line as FabricLine } from 'fabric';
+import { Canvas as FabricCanvas, Circle as FabricCircle, Path as FabricPath, Polygon as FabricPolygon, Text as FabricText } from 'fabric';
+
+import { fabric } from 'fabric';
 
 
 
@@ -66,11 +68,11 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
     // Temp line placement system
     const placeLine = (x1,y1, x2,y2) => {
          // define what is above, below, left, right and inline
-         let above = y1 -(y2-10) > 0? true: false
-         let below = y1 -(y2+10) > 0? false:true
+         let above = y1 -(y2-20) > 0? true: false
+         let below = y1 -(y2+20) > 0? false:true
          let inline = above === below? true:false
-         let right = (x2-x1)+14 >0? false: true
-         let left = (x2-x1) - 14 > 0? true: false
+         let right = (x2-x1)+ 70 >0? false: true
+         let left = (x2-x1) - 70 > 0? true: false
 
 
          // detection implementation
@@ -171,89 +173,110 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
 
     // Function to update lines
     const updateLines = () => {
-      // Clear existing lines
       lines.current.forEach(line => fabricCanvas.remove(line));
       lines.current.clear();
-
-      transitions.forEach(({ from, to }, index) => {
+    
+      transitions.forEach(({ from, to, input }, index) => {
         const fromCircle = fabricCanvas.getObjects().find(obj => obj.id === from);
         const toCircle = fabricCanvas.getObjects().find(obj => obj.id === to);
-
+    
         if (fromCircle && toCircle) {
-          
-          let x1 = fromCircle.aCoords.br.x - 20
-          let y1 = fromCircle.aCoords.br.y - 20
-
-          let x2 = toCircle.aCoords.br.x - 20
-          let y2 = toCircle.aCoords.br.y - 20
-
+          let x1 = fromCircle.aCoords.br.x - 20;
+          let y1 = fromCircle.aCoords.br.y - 20;
+          let x2 = toCircle.aCoords.br.x - 20;
+          let y2 = toCircle.aCoords.br.y - 20;
+    
           const [[Nx1, Ny1], [Nx2, Ny2]] = placeLine(x1, y1, x2, y2);
-          console.log(Nx1, Ny1, Nx2, Ny2);
-
-          const line = new FabricLine([
-            Nx1, Ny1,
-            Nx2,Ny2
-          ], {
+    
+          let controlX = (Nx1 + Nx2) / 2;
+          let controlY = Math.min(Ny1, Ny2) - 50;
+    
+          // Adjust the control point if the target is above the start
+          if (Ny2 < Ny1) {
+            controlY = Math.max(Ny1, Ny2) + 50;
+          }
+    
+          const pathData = `M ${Nx1} ${Ny1} Q ${controlX} ${controlY}, ${Nx2} ${Ny2}`;
+          const curvedLine = new FabricPath(pathData, {
             stroke: 'black',
             strokeWidth: 2,
+            fill: '',
             selectable: false,
-            strokeLineCap: 'round',
-            id: `line-${index}`, // Assign a unique ID
+            id: `line-${index}`,
           });
-
-          fabricCanvas.add(line);
-          lines.current.set(`line-${index}`, line); // Store line reference
-
-         
-
-
-
-          // if(above){
-          //   console.log("above")
-          // }
-          // if(below){
-          //   console.log("below")
-          // }
-
-          // if(inline){
-          //   console.log("inline")
-          // }
-
-          // if(inline){ // are we inline            
-          //   if(left){ 
-          //     console.log("points should on left of circle")
-          //   }else if (right){
-          //     console.log("points should be on right of circle")
-          //   }            
-          // }
-          
-
-          // if(above){
-          //   if(left){
-          //     console.log("points should on left of circle")
-          //   }else if(right){
-          //     console.log("points should be on right of circle")
-          //   }else{
-          //     console.log("points should be on top of circle")
-          //   }
-          
-          // }
-
-       
-
-          // if(below){
-          //   console.log("points should be on bottom of circle")
-          // }
-
-
-          
-          
+    
+          fabricCanvas.add(curvedLine);
+          lines.current.set(`line-${index}`, curvedLine);
+    
+          // Draw a circle at the start position
+          const startCircle = new FabricCircle({
+            left: Nx1,
+            top: Ny1,
+            radius: 3,
+            fill: 'black',
+            originX: 'center',
+            originY: 'center',
+            selectable: false,
+          });
+    
+          fabricCanvas.add(startCircle);
+          lines.current.set(`start-circle-${index}`, startCircle);
+    
+          // Calculate position for the label
+          const labelDistance = 0.5; // Position at the middle of the curve
+          const labelX = (1 - labelDistance) ** 2 * Nx1 + 2 * (1 - labelDistance) * labelDistance * controlX + labelDistance ** 2 * Nx2;
+          const labelY = (1 - labelDistance) ** 2 * Ny1 + 2 * (1 - labelDistance) * labelDistance * controlY + labelDistance ** 2 * Ny2;
+    
+          // Create the label
+          const transitionLabel = new FabricText(input || '?', { // Use 'input' as the label
+            left: labelX,
+            top: labelY,
+            fontSize: 20,
+            fill: 'blue',
+            fontWeight: 'bold',
+            originX: 'center',
+            originY: 'center',
+            selectable: false,
+          });
+    
+          fabricCanvas.add(transitionLabel);
+          lines.current.set(`label-${index}`, transitionLabel);
+    
+          // Arrowhead calculation
+          const arrowOffset = 0;
+          var angle = Math.atan2(Ny2 - Ny1, Nx2 - Nx1);
+    
+          const arrowHeadLength = 10;
+          const arrowHeadWidth = 10;
+    
+          const arrowTipX = Nx2 - arrowOffset * Math.cos(angle);
+          const arrowTipY = Ny2 - arrowOffset * Math.sin(angle);
+    
+          const arrowBaseX1 = arrowTipX - arrowHeadLength * Math.cos(angle);
+          const arrowBaseY1 = arrowTipY - arrowHeadLength * Math.sin(angle);
+          const arrowBaseX2 = arrowBaseX1 + arrowHeadWidth * Math.cos(angle + Math.PI / 2);
+          const arrowBaseY2 = arrowBaseY1 + arrowHeadWidth * Math.sin(angle + Math.PI / 2);
+          const arrowBaseX3 = arrowBaseX1 + arrowHeadWidth * Math.cos(angle - Math.PI / 2);
+          const arrowBaseY3 = arrowBaseY1 + arrowHeadWidth * Math.sin(angle - Math.PI / 2);
+    
+          const arrowHead = new FabricPolygon([
+            { x: arrowTipX, y: arrowTipY },
+            { x: arrowBaseX2, y: arrowBaseY2 },
+            { x: arrowBaseX3, y: arrowBaseY3 }
+          ], {
+            fill: 'black',
+            selectable: false,
+            id: `arrowhead-${index}`,
+          });
+    
+          fabricCanvas.add(arrowHead);
+          lines.current.set(`arrowhead-${index}`, arrowHead);
         }
       });
-
-      // Render canvas
+    
       fabricCanvas.renderAll();
     };
+    
 
     // Add circles to the canvas
     states.forEach(state => addCircle(state));
