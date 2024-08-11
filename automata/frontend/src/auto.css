@@ -1,0 +1,46 @@
+
+
+.container {
+    display: flex;
+    justify-content: space-around;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    
+  }
+  
+  .controls {
+    flex: 0 0 20%; /* Adjust the size of the control panel */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .canvas-container {
+    flex-grow: 1;
+    border: 2px solid black;
+    background-color: lightgrey;
+    position: relative;
+  }
+  
+  /* button {
+    margin: 10px 0;
+  } */
+  
+  @media (max-width: 768px) {
+    .container {
+      flex-direction: column;
+    }
+  
+    .controls {
+      flex: 0 0 auto;
+      width: 100%;
+    }
+  
+    .canvas-container {
+      flex-grow: 1;
+      width: 100%;
+      height: 70vh; /* Adjust height for smaller screens */
+    }
+  }
+  
