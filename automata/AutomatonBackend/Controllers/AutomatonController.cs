@@ -23,6 +23,22 @@ public class AutomatonController : ControllerBase
 
 
 
+    [HttpPost("refresh")]
+    public IActionResult refresh(){
+        _logger.LogInformation("Received request to refresh");
+
+        try{
+            // ToDO: in future return differing sets of states and transitions based on current type
+
+            
+            return Ok(new { States = states.Keys.ToList(), Transitions = transitions.Keys.ToList() });
+
+        }catch (Exception ex){
+            _logger.LogError(ex, "Error refreshing");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
 
    [HttpPost("createState")]
     public IActionResult CreateState([FromBody] StateCreate state)
@@ -155,7 +171,7 @@ public IActionResult DeleteState([FromBody] StateDelete state)
 
 
 [HttpPost("SimDFA")]
-public IActionResult SimulateDfa([FromBody] AutomatonData input)
+public IActionResult lateDfa([FromBody] AutomatonData input)
 {
     _logger.LogInformation("Received Request to simulate DFA");
 

@@ -34,6 +34,25 @@ export const createState = async (type, acceptState) => {
   });
 };
 
+
+export const refresh = async () => {
+    const refreshRequest = new XMLHttpRequest();
+    refreshRequest.open("POST", `${apiUrl}/refresh`);
+    refreshRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+
+    return new Promise((resolve, reject) => {
+      refreshRequest.onload = () => {
+        if(refreshRequest.readyState === 4 && refreshRequest.status === 200){
+          resolve(JSON.parse(refreshRequest.responseText))          
+        }else{
+          reject(new Error(`Error Connecting: ${refreshRequest.status}`))
+        }
+      }
+      refreshRequest.onerror = () => reject(new Error(`Network error occured`))
+      refreshRequest.send("")
+    })
+}
+
 export const deleteState = async (type, stateName) => {
     const stateData = JSON.stringify({
         Type: type,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition } from './HttpRequests';
+import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh } from './HttpRequests';
 import './tailwind.css';
-import { Stage, Layer, Circle } from 'react-konva';
+// import { Stage, Layer, Circle } from 'react-konva';
 import Canvas from './Canvas';
 import colours from './colours'; // Import the colours function
 import Modal from './Modal'
@@ -34,7 +34,7 @@ const Automaton = () => {
 
   useEffect(() => {
     const initialState = type ? states[0] : PDAstates[0];
-    selectState(initialState);
+    selectState(initialState);    
   }, [type, states, PDAstates]);
 
   useEffect(() => {
@@ -47,7 +47,8 @@ const Automaton = () => {
         stage.batchDraw();
       }
     };
-
+    
+    handleRefresh()
     window.addEventListener('resize', handleResize);
     handleResize();
 
@@ -158,8 +159,10 @@ const Automaton = () => {
       const transitionObject = {from: stateFrom, to: stateTo, input: inputChar }
       if(type){
         setTransitions((prevTransitions) =>
-          prevTransitions.filter((transition) => transition.from !== stateFrom, transition.to !== stateTo, transition.input !== inputChar)
-        );
+          prevTransitions.filter((transition) => 
+            !(transition.from === stateFrom && transition.to === stateTo && transition.input === inputChar)
+          )
+        );        
       }else{
         setTransitions((prevTransitions) =>
           prevTransitions.filter((transition) => transition.from !== stateFrom, transition.to !== stateTo, transition.input !== inputChar)
@@ -192,6 +195,68 @@ const Automaton = () => {
   };
 
 
+  const handleRefresh = async () => {
+    try {
+      const response = await refresh();
+
+      // Handle Transitions
+      const Transitions = response.transitions;
+
+      // create array of transition objects
+      const transitionObjects = Transitions.map(transition => {
+        let [from, inputChar, to] = transition.split("-");
+        return { from, to, input: inputChar };
+      });
+  
+      // Filter out transitions that are already in the array (remove duplicates)
+      setTransitions((prevTransitions) => {
+        const uniqueTransitions = transitionObjects.filter(newTransition =>
+          !prevTransitions.some(
+            prevTransition =>
+              prevTransition.from === newTransition.from &&
+              prevTransition.to === newTransition.to &&
+              prevTransition.input === newTransition.input
+          )
+        );
+        return [...prevTransitions, ...uniqueTransitions];
+      });
+
+
+      // Handle States
+      // ToDo: store colours and positions on the backend for better refreshing      
+      const names = response.states   
+      
+      setStates((prevStates) => {
+        const uniqueStates = names.filter(newStates => 
+          !prevStates.some(
+            prevStates =>
+              prevStates === newStates
+          )
+        )
+        return[...prevStates, ...uniqueStates]
+      })
+      
+      names.forEach((name) => {
+        const color = getColour();    
+        const position = {
+          x: Math.random() * (window.innerWidth - 500) + 50,
+          y: Math.random() * (window.innerHeight - 200) + 50,
+        };
+        positions.current.set(name, position);
+        coloursRef.current.set(name, color);
+      })
+
+      
+      
+
+        
+      console.log(states);
+    } catch (error) {
+      setResponseMessage(error.message);
+    }
+  };
+  
+
 
   const handleOpenModal = (state) => {
     setSelectedState(state);
@@ -214,6 +279,7 @@ const Automaton = () => {
         <button type="button" onClick={handleDeleteTransition} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete Transition</button>
         <button type="button" onClick={handleDFASim} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Sim DFA</button>
         <button type="button" onClick={changeAcceptState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Set Accept State</button>
+        <button type="button" onClick={handleRefresh} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Refresh</button>
         <input type="text" value = {validateString} onChange={handleInputChange} id="first_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="John" required />
         <p>{responseMessage}</p>
       </div>
