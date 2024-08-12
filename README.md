@@ -2,8 +2,13 @@
 ## All functionality is in place, currently working on a robust, user friendly and interactive UI system to make working with the automaton intuitive and enjoyable
 
 
-## To-Do
-1. Make multiple transitions place on different offsets along the circle
-2. Add functionality to switch between automaton type
-3. Save & load automatons to json formats
-4. General code cleanup and commenting
+## ToDo
+- Enable ability to create PDATransitions
+- Store state positions & colours on backend
+- Change backend to allow us to switch between types of state machine
+- Create PDA backend sim functionality
+
+
+### Doing
+- PDATransitions
+- storing state positions & colours on backend
