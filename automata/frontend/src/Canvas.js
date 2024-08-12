@@ -6,7 +6,9 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
   const [canvas, setCanvas] = useState(null);
   const isDragging = useRef(false);
   const lines = useRef(new Map());
+  const radius = 35;
   const animationFrameId = useRef(null);
+  const transitionsByState = useRef(new Map()); // Map to store transitions by state
 
   useEffect(() => {
     const fabricCanvas = new FabricCanvas(canvasRef.current, { renderOnAddRemove: false });
@@ -19,7 +21,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       const circle = new FabricCircle({
         left: pos.x,
         top: pos.y,
-        radius: 20,
+        radius: radius,
         fill: color,
         id: state,
         hasControls: false,
@@ -36,7 +38,8 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       circle.on('moving', () => {
         isDragging.current = true;
         positions.current.set(state, { x: circle.left, y: circle.top });
-        if (!animationFrameId.current) {
+        
+        if (!animationFrameId.current) { // using animation frames for moving to reduce disconnect between circles and lines
           animationFrameId.current = requestAnimationFrame(() => {
             updateLines();
             animationFrameId.current = null;
@@ -54,65 +57,67 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       fabricCanvas.add(circle);
     };
 
-    const placeLine = (x1, y1, x2, y2) => {
-      let above = y1 - (y2 - 20) > 0 ? true : false;
-      let below = y1 - (y2 + 20) > 0 ? false : true;
+    const placeLine = (x1, y1, x2, y2, index) => {
+      let dist = index === 1 ? 0.7 * index : index === 2? 0.13 * index: index ===3? -0.4/4: -0.6;
+
+      let above = y1 - (y2 - radius) > 0 ? true : false;
+      let below = y1 - (y2 + radius) > 0 ? false : true;
       let inline = above === below ? true : false;
       let right = (x2 - x1) + 70 > 0 ? false : true;
       let left = (x2 - x1) - 70 > 0 ? true : false;
 
       if (inline) {
         if (right) {
-          let n1 = x1 + (20 * Math.cos(Math.PI));
-          let z1 = y1 + (20 * Math.sin(Math.PI));
-          let n2 = x2 + (20 * Math.cos(2 * Math.PI));
-          let z2 = y2 + (20 * Math.sin(2 * Math.PI));
+          let n1 = x1 + (radius * Math.cos((Math.PI) + dist));
+          let z1 = y1 + (radius * Math.sin((Math.PI) + dist));
+          let n2 = x2 + (radius * Math.cos((2 * Math.PI) - dist));
+          let z2 = y2 + (radius * Math.sin((2 * Math.PI) - dist));
           return [[n1, z1], [n2, z2]];
         } else {
-          let n1 = x1 + (20 * Math.cos(2 * Math.PI));
-          let z1 = y1 + (20 * Math.sin(2 * Math.PI));
-          let n2 = x2 + (20 * Math.cos(Math.PI));
-          let z2 = y2 + (20 * Math.sin(Math.PI));
+          let n1 = x1 + (radius * Math.cos((2 * Math.PI) - dist));
+          let z1 = y1 + (radius * Math.sin((2 * Math.PI) - dist));
+          let n2 = x2 + (radius * Math.cos((Math.PI) + dist));
+          let z2 = y2 + (radius * Math.sin((Math.PI) + dist));
           return [[n1, z1], [n2, z2]];
         }
       } else if (above) {
         if (right) {
-          let n1 = x1 + (20 * Math.cos(3 * Math.PI / 2));
-          let z1 = y1 + (20 * Math.sin(3 * Math.PI / 2));
-          let n2 = x2 + (20 * Math.cos(2 * Math.PI));
-          let z2 = y2 + (20 * Math.sin(2 * Math.PI));
+          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) + dist));
+          let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) + dist));
+          let n2 = x2 + (radius * Math.cos((2 * Math.PI) - dist));
+          let z2 = y2 + (radius * Math.sin((2 * Math.PI) - dist));
           return [[n1, z1], [n2, z2]];
         } else if (left) {
-          let n1 = x1 + (20 * Math.cos(3 * Math.PI / 2));
-          let z1 = y1 + (20 * Math.sin(3 * Math.PI / 2));
-          let n2 = x2 + (20 * Math.cos(Math.PI));
-          let z2 = y2 + (20 * Math.sin(Math.PI));
+          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) - dist));
+          let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) - dist));
+          let n2 = x2 + (radius * Math.cos(Math.PI + dist));
+          let z2 = y2 + (radius * Math.sin(Math.PI + dist));
           return [[n1, z1], [n2, z2]];
         } else {
-          let n1 = x1 + (20 * Math.cos(3 * Math.PI / 2));
-          let z1 = y1 + (20 * Math.sin(3 * Math.PI / 2));
-          let n2 = x2 + (20 * Math.cos(Math.PI / 2));
-          let z2 = y2 + (20 * Math.sin(Math.PI / 2));
+          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) - dist));
+          let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) - dist));
+          let n2 = x2 + (radius * Math.cos((Math.PI / 2) + dist));
+          let z2 = y2 + (radius * Math.sin((Math.PI / 2) + dist));
           return [[n1, z1], [n2, z2]];
         }
       } else if (below) {
         if (right) {
-          let n1 = x1 + (20 * Math.cos(Math.PI));
-          let z1 = y1 + (20 * Math.sin(Math.PI));
-          let n2 = x2 + (20 * Math.cos(3 * (Math.PI / 2)));
-          let z2 = y2 + (20 * Math.sin(3 * (Math.PI / 2)));
+          let n1 = x1 + (radius * Math.cos(Math.PI + dist));
+          let z1 = y1 + (radius * Math.sin(Math.PI + dist));
+          let n2 = x2 + (radius * Math.cos((3 * (Math.PI / 2)) - dist));
+          let z2 = y2 + (radius * Math.sin((3 * (Math.PI / 2)) - dist));
           return [[n1, z1], [n2, z2]];
         } else if (left) {
-          let n1 = x1 + (20 * Math.cos(2 * Math.PI));
-          let z1 = y1 + (20 * Math.sin(2 * Math.PI));
-          let n2 = x2 + (20 * Math.cos(3 * (Math.PI / 2)));
-          let z2 = y2 + (20 * Math.sin(3 * (Math.PI / 2)));
+          let n1 = x1 + (radius * Math.cos((2 * Math.PI) - dist));
+          let z1 = y1 + (radius * Math.sin((2 * Math.PI) - dist));
+          let n2 = x2 + (radius * Math.cos((3 * (Math.PI / 2)) + dist));
+          let z2 = y2 + (radius * Math.sin((3 * (Math.PI / 2)) + dist));
           return [[n1, z1], [n2, z2]];
         }
-        let n1 = x1 + (20 * Math.cos(Math.PI / 2));
-        let z1 = y1 + (20 * Math.sin(Math.PI / 2));
-        let n2 = x2 + (20 * Math.cos((3 * Math.PI / 2)));
-        let z2 = y2 + (20 * Math.sin((3 * Math.PI / 2)));
+        let n1 = x1 + (radius * Math.cos((Math.PI / 2) - dist));
+        let z1 = y1 + (radius * Math.sin((Math.PI / 2) - dist));
+        let n2 = x2 + (radius * Math.cos((3 * Math.PI / 2) + dist));
+        let z2 = y2 + (radius * Math.sin((3 * Math.PI / 2) + dist));
         return [[n1, z1], [n2, z2]];
       }
     };
@@ -120,53 +125,69 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
     const updateLines = () => {
       fabricCanvas.renderOnAddRemove = false;
 
+       // Remove all existing lines and labels
       lines.current.forEach(line => fabricCanvas.remove(line));
-      lines.current.clear();      
+      lines.current.clear();    
+      
+      const stateTransitionCount = new Map();
 
       transitions.forEach(({ from, to, input }, index) => {
         const fromCircle = fabricCanvas.getObjects().find(obj => obj.id === from);
         const toCircle = fabricCanvas.getObjects().find(obj => obj.id === to);
 
         if (fromCircle && toCircle) {
-          let x1 = fromCircle.aCoords.br.x - 20;
-          let y1 = fromCircle.aCoords.br.y - 20;
-          let x2 = toCircle.aCoords.br.x - 20;
-          let y2 = toCircle.aCoords.br.y - 20;
+          // Increment the transition count for both 'from' and 'to' states
+          if (!stateTransitionCount.has(from)) stateTransitionCount.set(from, 0);
+          if (!stateTransitionCount.has(to)) stateTransitionCount.set(to, 0);
 
-          const [[Nx1, Ny1], [Nx2, Ny2]] = placeLine(x1, y1, x2, y2);
+          // Use the current count to determine the index
+          const transitionIndexFrom = stateTransitionCount.get(from) % 4 + 1;
+          const transitionIndexTo = stateTransitionCount.get(to) % 4 + 1;
+
+          console.log(`Transition involving state ${from} and ${to}, indexed at ${transitionIndexFrom} and ${transitionIndexTo}`);
+
+          // Increment the count for both states
+          stateTransitionCount.set(from, stateTransitionCount.get(from) + 1);
+          stateTransitionCount.set(to, stateTransitionCount.get(to) + 1);
+
+          let x1 = fromCircle.aCoords.br.x - radius;
+          let y1 = fromCircle.aCoords.br.y - radius;
+          let x2 = toCircle.aCoords.br.x - radius;
+          let y2 = toCircle.aCoords.br.y - radius;
+
+          const [[Nx1, Ny1], [Nx2, Ny2]] = placeLine(x1, y1, x2, y2, transitionIndexFrom);
+
+          let below = y1 - (y2 + radius) > 0 ? false : true;
+          let right = (x2 - x1) + 70 > 0 ? false : true;
+          let left = (x2 - x1) - 70 > 0 ? true : false;
+          let above = y1 - (y2 - radius) > 0 ? true : false;
           
-          let below = y1 - (y2 + 20) > 0 ? false : true;
-          let right = (Nx2 - Nx1) + 70 > 0 ? false : true;
-          let left = (Nx2 - Nx1) - 70 > 0 ? true : false;
-          let above = y1 - (y2 - 20) > 0 ? true : false;
-
-          // ToDo: Let drawLines return the angle to make code cleaner
-          let controlY = Math.min(Ny1, Ny2) + 50;
+          let controlY = Math.min(Ny1, Ny2) - 50;
+         
           if(below && (left || right)){
             controlY = Math.min(Ny1, Ny2) - 50;
           }else{
             controlY = Math.min(Ny1, Ny2) + 50;
           }
 
-          if(above && (left || right)){
-            controlY = Math.min(Ny1, Ny2) - 50;
-          }else{
-            controlY = Math.min(Ny1, Ny2) + 50;
-          }
+          if (above && (left || right)) {
+            controlY = Math.min(Ny1, Ny2)-20;
+          } 
+          // else if(above && !(left || right)){
+          //   controlY = Math.min(Ny1, Ny2) + 50;
+          // }
 
           let controlX = (Nx1 + Nx2) / 2;
-          
 
           const pathData = `M ${Nx1} ${Ny1} Q ${controlX} ${controlY}, ${Nx2} ${Ny2}`;
           const curvedLine = new FabricPath(pathData, {
-            stroke: 'black',
+            stroke: 'red',
             strokeWidth: 2,
             fill: '',
             selectable: false,
             id: `line-${index}`,
           });
 
-          // Draw a circle at both ends
           const startCircle = new FabricCircle({
             left: Nx1,
             top: Ny1,
@@ -187,19 +208,28 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
             selectable: false,
           });
 
-          const labelDistance = 0.5;
-          const labelX = (1 - labelDistance) ** 2 * Nx1 + 2 * (1 - labelDistance) * labelDistance * controlX + labelDistance ** 2 * Nx2;
-          const labelY = (1 - labelDistance) ** 2 * Ny1 + 2 * (1 - labelDistance) * labelDistance * controlY + labelDistance ** 2 * Ny2;
+          const labelDistance = 0 + transitionIndexFrom/6; // Change this to place the label at different points on the path
+          const labelX = Math.round((1 - labelDistance) ** 2 * Nx1 + 2 * (1 - labelDistance) * labelDistance * controlX + labelDistance ** 2 * Nx2);
+          const labelY = Math.round((1 - labelDistance) ** 2 * Ny1 + 2 * (1 - labelDistance) * labelDistance * controlY + labelDistance ** 2 * Ny2);
+
+
           const transitionLabel = new FabricText(input || '?', {
             left: labelX,
             top: labelY,
-            fontSize: 20,
-            fill: 'red',
+            fontSize: 28,
+            fill: 'black',
             fontWeight: 'bold',
             originX: 'center',
             originY: 'center',
             selectable: false,
           });
+          transitionLabel.set({ objectCaching: false });
+          transitionLabel.set({
+            left: labelX,
+            top: labelY
+          });
+          transitionLabel.setCoords();
+          
 
           const t = 1;
           const dx = 2 * (1 - t) * (controlX - Nx1) + 2 * t * (Nx2 - controlX);
@@ -229,13 +259,15 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
             id: `arrowhead-${index}`,
           });
 
-          const pathGroup = new FabricGroup([curvedLine, startCircle, endCircle, transitionLabel, arrowHead], {
+          const pathGroup = new FabricGroup([curvedLine, startCircle, endCircle, arrowHead], {
             selectable: false,
             id: `pathGroup-${index}`,
           });
 
           fabricCanvas.add(pathGroup);
-          lines.current.set(`pathGroup-${index}`, pathGroup);
+          fabricCanvas.add(transitionLabel);
+          lines.current.set(`pathGroup-${index}`, pathGroup);           
+          lines.current.set(`label-${index}`, transitionLabel);
         }
       });
 
@@ -253,6 +285,10 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       }
     };
   }, [states, transitions, positions, coloursRef, onCircleClick, updateTransitionPositions]);
+
+  const getTransitionsForState = (state) => {
+    return transitionsByState.current.get(state);
+  };
 
   return (
     <canvas
