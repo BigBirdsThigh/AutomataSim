@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { updatePositions } from './HttpRequests';
 import { Canvas as FabricCanvas, Circle as FabricCircle, Path as FabricPath, Polygon as FabricPolygon, Text as FabricText, Group as FabricGroup } from 'fabric';
 
 const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, updateTransitionPositions }) => {
@@ -6,6 +7,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
   const [canvas, setCanvas] = useState(null);
   const isDragging = useRef(false);
   const lines = useRef(new Map());
+  // const positions = useRef(new Map())
   const radius = 35;
   const animationFrameId = useRef(null);
   const transitionsByState = useRef(new Map()); // Map to store transitions by state
@@ -13,11 +15,15 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
   useEffect(() => {
     const fabricCanvas = new FabricCanvas(canvasRef.current, { renderOnAddRemove: false });
     setCanvas(fabricCanvas);
+    fabricCanvas.selection = false;
+    fabricCanvas.hoverCursor = 'pointer'; // Default cursor when hovering over objects
+    fabricCanvas.defaultCursor = 'default'; // Default cursor for the canvas  
 
-    const addCircle = (state) => {
-      const pos = positions.current.get(state) || { x: 100, y: 100 };
-      const color = coloursRef.current.get(state) || 'red';
-
+    const addCircle = async (state) => {
+      const pos = (positions.current.get(state) || { x: 100, y: 100 });      
+      const color = coloursRef.current.get(state) || 'red';      
+      // updatePositions(state, [positions.current.get(state).x, positions.current.get(state).y])
+    
       const circle = new FabricCircle({
         left: pos.x,
         top: pos.y,
@@ -30,32 +36,117 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
         originY: 'center',
         selectable: true,
       });
-
+    
+      const stateName = new FabricText(state || '?', {
+        left: circle.left,
+        top: circle.top,
+        fontSize: 28,
+        fill: 'black',
+        fontWeight: 'bold',
+        originX: 'center',
+        originY: 'center',
+        selectable: false,
+      });        
+    
+      let isDragging = false;  // Track if the circle was dragged
+      let originalPosition = { x: circle.left, y: circle.top };
+    
+      // Start tracking drag state
       circle.on('mousedown', () => {
-        isDragging.current = false;
+        isDragging = false;
+        originalPosition = { x: circle.left, y: circle.top };
       });
 
-      circle.on('moving', () => {
-        isDragging.current = true;
+
+    
+      // Track movement to detect dragging
+      circle.on('mousemove', () => {
+        if (circle.left !== originalPosition.x || circle.top !== originalPosition.y) {
+          isDragging = true;
+        }
+        stateName.set({
+          left: circle.left,
+          top: circle.top
+        });
         positions.current.set(state, { x: circle.left, y: circle.top });
         
-        if (!animationFrameId.current) { // using animation frames for moving to reduce disconnect between circles and lines
+    
+            
+      });
+  
+        // Group the circle and text together
+      const stateGroup = new FabricGroup([circle, stateName], {
+        selectable: true,
+        hasControls: true,      // Enable controls around the group
+        lockScalingX: true,    
+        lockScalingY: true,    
+        lockRotation: true,
+        id: `stateGroup-${state}`,
+      });
+
+      stateGroup.set({
+        borderColor: 'transparent',  // turn off border
+        cornerColor: 'transparent',  // turn off border
+        cornerSize: 10,       
+        transparentCorners: true,  
+      });
+
+            
+      let hasMoved = false;
+      let mouseDown = false
+    
+      stateGroup.on('mousedown', (options) => {
+        isDragging = true;
+        hasMoved = false;
+        mouseDown = true
+      });
+    
+      stateGroup.on('moving', (options) => {
+         
+        positions.current.set(state, { x: stateGroup.left, y: stateGroup.top });         
+        hasMoved = true;    
+        console.log(positions.current.get(state))           
+             
+        if (!animationFrameId.current) {
           animationFrameId.current = requestAnimationFrame(() => {
             updateLines();
             animationFrameId.current = null;
           });
+        }    
+
+      });
+      
+    
+      fabricCanvas.on('mouse:up', (options) => {
+        if (isDragging) {
+          isDragging = false;
+    
+          if (!hasMoved) {
+            // This was a click, not a drag
+            
+            updatePositions(state, [positions.current.get(state).x, positions.current.get(state).y])
+            positions.current.set(state, { x: (stateGroup.left +36), y: (stateGroup.top+36) });
+            if (onCircleClick) onCircleClick(state);
+          } else {
+            // This was a drag
+            updatePositions(state, [positions.current.get(state).x+36, positions.current.get(state).y+36])            
+            positions.current.set(state, { x: (stateGroup.left +36), y: (stateGroup.top+36) });
+            isDragging = false
+            updateLines();
+          }
         }
       });
 
-      circle.on('mouseup', () => {
-        if (!isDragging.current) {
-          if (onCircleClick) onCircleClick(state);
-        }
-        isDragging.current = false;
-      });
 
-      fabricCanvas.add(circle);
+      fabricCanvas.add(stateGroup);
+      // fabricCanvas.add();
+      
+
     };
+
+   
+    
+    
 
     const placeLine = (x1, y1, x2, y2, index) => {
       let dist = index === 1 ? 0.7 * index : index === 2? 0.13 * index: index ===3? -0.4/4: -0.6;
@@ -81,17 +172,17 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
           return [[n1, z1], [n2, z2]];
         }
       } else if (above) {
-        if (right) {
-          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) + dist));
-          let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) + dist));
-          let n2 = x2 + (radius * Math.cos((2 * Math.PI) - dist));
-          let z2 = y2 + (radius * Math.sin((2 * Math.PI) - dist));
+        if (right) {          
+          let n1 = x1 + (radius * Math.cos(-(Math.PI/2) - dist));
+          let z1 = y1 + (radius * Math.sin(-(Math.PI/2) - dist));
+          let n2 = x2 + (radius * Math.cos((2*Math.PI) + dist));
+          let z2 = y2 + (radius * Math.sin((2 * Math.PI) + dist));
           return [[n1, z1], [n2, z2]];
         } else if (left) {
-          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) - dist));
-          let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) - dist));
-          let n2 = x2 + (radius * Math.cos(Math.PI + dist));
-          let z2 = y2 + (radius * Math.sin(Math.PI + dist));
+          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) + dist));
+          let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) + dist));
+          let n2 = x2 + (radius * Math.cos(Math.PI - dist));
+          let z2 = y2 + (radius * Math.sin(Math.PI - dist));
           return [[n1, z1], [n2, z2]];
         } else {
           let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) - dist));
@@ -103,12 +194,12 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       } else if (below) {
         if (right) {
           let n1 = x1 + (radius * Math.cos(Math.PI + dist));
-          let z1 = y1 + (radius * Math.sin(Math.PI + dist));
-          let n2 = x2 + (radius * Math.cos((3 * (Math.PI / 2)) - dist));
-          let z2 = y2 + (radius * Math.sin((3 * (Math.PI / 2)) - dist));
+          let z1 = y1 + (radius * Math.sin(Math.PI - dist));
+          let n2 = x2 + (radius * Math.cos((3 * (Math.PI / 2)) + dist));
+          let z2 = y2 + (radius * Math.sin((3 * (Math.PI / 2)) + dist));
           return [[n1, z1], [n2, z2]];
         } else if (left) {
-          let n1 = x1 + (radius * Math.cos((2 * Math.PI) - dist));
+          let n1 = x1 + (radius * Math.cos((2 * Math.PI) + dist));
           let z1 = y1 + (radius * Math.sin((2 * Math.PI) - dist));
           let n2 = x2 + (radius * Math.cos((3 * (Math.PI / 2)) + dist));
           let z2 = y2 + (radius * Math.sin((3 * (Math.PI / 2)) + dist));
@@ -132,8 +223,8 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
       const stateTransitionCount = new Map();
 
       transitions.forEach(({ from, to, input }, index) => {
-        const fromCircle = fabricCanvas.getObjects().find(obj => obj.id === from);
-        const toCircle = fabricCanvas.getObjects().find(obj => obj.id === to);
+        const fromCircle = fabricCanvas.getObjects().find(obj => obj.id === `stateGroup-${from}`);
+        const toCircle = fabricCanvas.getObjects().find(obj => obj.id === `stateGroup-${to}`);
 
         if (fromCircle && toCircle) {
           // Increment the transition count for both 'from' and 'to' states
@@ -284,7 +375,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [states, transitions, positions, coloursRef, onCircleClick, updateTransitionPositions]);
+  }, [states, transitions]);
 
   const getTransitionsForState = (state) => {
     return transitionsByState.current.get(state);

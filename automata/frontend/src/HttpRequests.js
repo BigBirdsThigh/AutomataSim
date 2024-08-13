@@ -1,3 +1,4 @@
+import { parseSVGDocument } from 'fabric';
 import Transition from './Transition';
 
 const apiUrl = "http://localhost:5027/api/auto"; // Using HTTP for simplicity
@@ -37,7 +38,7 @@ export const createState = async (type, acceptState) => {
 
 export const refresh = async () => {
     const refreshRequest = new XMLHttpRequest();
-    refreshRequest.open("POST", `${apiUrl}/refresh`);
+    refreshRequest.open("GET", `${apiUrl}/refresh`);
     refreshRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
     return new Promise((resolve, reject) => {
@@ -52,6 +53,53 @@ export const refresh = async () => {
       refreshRequest.send("")
     })
 }
+
+
+export const updatePositions = async (name, position) => {
+  const updateRequest = new XMLHttpRequest();
+  updateRequest.open("POST", `${apiUrl}/update`);
+  updateRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+
+  const request = JSON.stringify({
+    name: name,
+    position: position
+  })
+
+  return new Promise((resolve, reject) => {
+    updateRequest.onload = () => {
+      if(updateRequest.readyState === 4 && updateRequest.status === 200 ){
+        resolve(JSON.parse(updateRequest.responseText))
+      }else{
+        reject(new Error(`Error connection: ${updateRequest.status}`))
+      }
+    }
+    console.log(position)
+    updateRequest.onerror = () => reject(new Error("Network Error Occurred"))
+
+    updateRequest.send(request)
+  })
+
+}
+
+  export const retrievePositions = async (state) => {
+    const retrieve = new XMLHttpRequest();
+    retrieve.open("GET", `${apiUrl}/retrieve?args=${state}`)
+    retrieve.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+    
+    return new Promise((resolve, reject) => {
+      retrieve.onload = () => {
+        if(retrieve.readyState === 4 && retrieve.status === 200){
+          resolve(JSON.parse(retrieve.responseText))
+        }else{
+          reject(new Error(`Error retrieving position ${retrieve.status}`))
+        }
+      }
+      retrieve.onerror =() => reject(new Error(`Network error occured`))
+      retrieve.send("")
+    }
+    
+  )
+  }
 
 export const deleteState = async (type, stateName) => {
     const stateData = JSON.stringify({

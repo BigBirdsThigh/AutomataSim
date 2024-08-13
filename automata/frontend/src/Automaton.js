@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh } from './HttpRequests';
+import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh, retrievePositions } from './HttpRequests';
 import './tailwind.css';
-// import { Stage, Layer, Circle } from 'react-konva';
+
 import Canvas from './Canvas';
 import colours from './colours'; // Import the colours function
 import Modal from './Modal'
@@ -197,64 +197,41 @@ const Automaton = () => {
 
   const handleRefresh = async () => {
     try {
-      const response = await refresh();
+        const response = await refresh();
+        const names = response.states;
 
-      // Handle Transitions
-      const Transitions = response.transitions;
+        // First, clear out old states that are not in the new list
+        setStates((prevStates) => {
+            return prevStates.filter((prevState) => names.includes(prevState));
+        });
 
-      // create array of transition objects
-      const transitionObjects = Transitions.map(transition => {
-        let [from, inputChar, to] = transition.split("-");
-        return { from, to, input: inputChar };
-      });
-  
-      // Filter out transitions that are already in the array (remove duplicates)
-      setTransitions((prevTransitions) => {
-        const uniqueTransitions = transitionObjects.filter(newTransition =>
-          !prevTransitions.some(
-            prevTransition =>
-              prevTransition.from === newTransition.from &&
-              prevTransition.to === newTransition.to &&
-              prevTransition.input === newTransition.input
-          )
+        // Update or set the new positions for each state
+        await Promise.all(
+            names.map(async (name) => {
+                const positionResponse = await retrievePositions(name);
+                const position = positionResponse.position;
+
+                if (position) {
+                    positions.current.set(name, { x: position[0], y: position[1] });
+                } else {
+                    // Handle case where position isn't available
+                    positions.current.set(name, { x: 100, y: 100 });
+                }
+
+                const color = getColour();
+                coloursRef.current.set(name, color);
+            })
         );
-        return [...prevTransitions, ...uniqueTransitions];
-      });
 
+        // Finally, update the states list to trigger re-render
+        setStates(names);
+        console.log("Updated states and positions:", states, positions.current);
 
-      // Handle States
-      // ToDo: store colours and positions on the backend for better refreshing      
-      const names = response.states   
-      
-      setStates((prevStates) => {
-        const uniqueStates = names.filter(newStates => 
-          !prevStates.some(
-            prevStates =>
-              prevStates === newStates
-          )
-        )
-        return[...prevStates, ...uniqueStates]
-      })
-      
-      names.forEach((name) => {
-        const color = getColour();    
-        const position = {
-          x: Math.random() * (window.innerWidth - 500) + 50,
-          y: Math.random() * (window.innerHeight - 200) + 50,
-        };
-        positions.current.set(name, position);
-        coloursRef.current.set(name, color);
-      })
-
-      
-      
-
-        
-      console.log(states);
     } catch (error) {
-      setResponseMessage(error.message);
+        setResponseMessage(error.message);
     }
-  };
+};
+  
   
 
 

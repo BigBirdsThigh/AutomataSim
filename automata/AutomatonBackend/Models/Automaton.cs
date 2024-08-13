@@ -25,6 +25,11 @@
         
     }
 
+    public class Positions{
+        public string name {get; set;}
+        public float[] position {get; set;}
+    }
+
     public class StateDelete {
         public string Name { get; set; }
         public bool Type { get; set; }
