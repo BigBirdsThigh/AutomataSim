@@ -22,7 +22,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
     const addCircle = async (state) => {
       const pos = (positions.current.get(state) || { x: 100, y: 100 });      
       const color = coloursRef.current.get(state) || 'red';      
-      // updatePositions(state, [positions.current.get(state).x, positions.current.get(state).y])
+      updatePositions(state, [positions.current.get(state).x, positions.current.get(state).y])
     
       const circle = new FabricCircle({
         left: pos.x,
@@ -144,9 +144,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
 
     };
 
-   
-    
-    
+           
 
     const placeLine = (x1, y1, x2, y2, index) => {
       let dist = index === 1 ? 0.7 * index : index === 2? 0.13 * index: index ===3? -0.4/4: -0.6;
