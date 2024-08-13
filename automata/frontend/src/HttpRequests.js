@@ -55,14 +55,15 @@ export const refresh = async () => {
 }
 
 
-export const updatePositions = async (name, position) => {
+export const updatePositions = async (name, position, colour) => {
   const updateRequest = new XMLHttpRequest();
   updateRequest.open("POST", `${apiUrl}/update`);
   updateRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
   const request = JSON.stringify({
     name: name,
-    position: position
+    position: position || [],
+    colour: colour || ""
   })
 
   return new Promise((resolve, reject) => {

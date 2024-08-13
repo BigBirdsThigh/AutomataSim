@@ -28,6 +28,7 @@
     public class Positions{
         public string name {get; set;}
         public float[] position {get; set;}
+        public string colour {get; set;}    
     }
 
     public class StateDelete {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh, retrievePositions } from './HttpRequests';
+import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh, retrievePositions, updatePositions } from './HttpRequests';
 import './tailwind.css';
 
 import Canvas from './Canvas';
@@ -71,13 +71,17 @@ const Automaton = () => {
     try {
       const { response } = await createState(true, acceptState, states, []);
       const name = response.response;
+      let x = Math.random() * (window.innerWidth - 500) + 50 ;
+      let y = Math.random() * (window.innerHeight - 200) + 50;
       const position = {
-        x: Math.random() * (window.innerWidth - 500) + 50,
-        y: Math.random() * (window.innerHeight - 200) + 50,
+        x: x,
+        y: y
       };
       const color = getColour();
       positions.current.set(name, position);
       coloursRef.current.set(name, color);
+      updatePositions(name, [x,y], color)
+      
       setResponseMessage(`State Created: ${name}`);
       setStates((prevStates) => [...prevStates, name]);
     } catch (error) {
@@ -199,11 +203,26 @@ const Automaton = () => {
     try {
         const response = await refresh();
         const names = response.states;
+        const Transitions = response.transitions
 
         // First, clear out old states that are not in the new list
         setStates((prevStates) => {
             return prevStates.filter((prevState) => names.includes(prevState));
         });
+
+        setTransitions((prevTransitions) => {
+          return prevTransitions.filter((prevTransition) => Transitions.includes(prevTransition))
+        })
+
+
+        Transitions.forEach(t => {
+          console.log(t)
+          let [to, input, from] = t.split("-");
+          
+          const transitionObject = { from: from, to: to, input: input };
+          setTransitions((prevStates) => [...prevStates, transitionObject]);
+        });
+        
 
         // Update or set the new positions for each state
         await Promise.all(
@@ -218,14 +237,16 @@ const Automaton = () => {
                     positions.current.set(name, { x: 100, y: 100 });
                 }
 
-                const color = getColour();
+                const color = positionResponse.colour                
                 coloursRef.current.set(name, color);
             })
         );
+        
 
         // Finally, update the states list to trigger re-render
         setStates(names);
-        console.log("Updated states and positions:", states, positions.current);
+        
+        console.log("Updated states and transitions:", states, transitions);
 
     } catch (error) {
         setResponseMessage(error.message);

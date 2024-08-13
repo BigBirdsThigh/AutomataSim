@@ -15,7 +15,9 @@ public class AutomatonController : ControllerBase
         private static readonly Dictionary<string, List<Transition>> transitions = new Dictionary<string, List<Transition>>();
         private static readonly Dictionary<string, List<PDAState>> PDAtransitions = new Dictionary<string, List<PDAState>>();
         private static readonly Dictionary<string,float[]> DFAPositions = new Dictionary<string, float[]>();
+        private static readonly Dictionary<string,string> DFAColours = new Dictionary<string, string>();
         private static int stateCounter = 0;
+        private static readonly object _lock = new object();
 
     public AutomatonController(ILogger<AutomatonController> logger)
     {
@@ -27,18 +29,33 @@ public class AutomatonController : ControllerBase
     public IActionResult update([FromBody] Positions positions){
         _logger.LogInformation("Received request to update positions");
         try {
-            if(DFAPositions.ContainsKey(positions.name)){
-                DFAPositions.Remove(positions.name);
-            }
-            
-            DFAPositions.Add(positions.name, positions.position);
+            lock (_lock) {
+                if (positions.position != null) {
+                    if(DFAPositions.ContainsKey(positions.name)){
+                        
+                        DFAPositions.Remove(positions.name);
+                    }
+                    DFAPositions.Add(positions.name, positions.position);
+                }
+
+                 // Check if the colour property is not an empty string
+                if (positions.colour != "")
+                {
+                    if(DFAColours.ContainsKey(positions.name)){
+                        DFAColours.Remove(positions.name);
+                    }
+                    DFAColours.Add(positions.name, positions.colour);
+                    
+                }
+
+            }           
+
+
             return Ok(new {message = "ok"});
         }catch(Exception ex){
             _logger.LogError(ex, "Error updating");
-            _logger.LogError("" + positions);
             return StatusCode(500, "Internal server error");
         }
-
     }
 
     [HttpGet("retrieve")]
@@ -47,12 +64,17 @@ public class AutomatonController : ControllerBase
         try {
             float[] position = null;
             string stateName = args;
+            string colour = "";
 
             if (DFAPositions.ContainsKey(stateName)){
                 position = DFAPositions.GetValueOrDefault(stateName);
                 _logger.LogInformation("position for " + stateName + " " + position);
             }
-            return Ok(new {position = position});
+            if (DFAColours.ContainsKey(stateName)){
+                colour = DFAColours.GetValueOrDefault(stateName);
+                
+            }
+            return Ok(new {position = position, colour = colour});
         }catch(Exception ex){
             _logger.LogError(ex, "Error updating");
             return StatusCode(500, "Internal server error");

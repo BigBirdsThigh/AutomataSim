@@ -22,7 +22,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
     const addCircle = async (state) => {
       const pos = (positions.current.get(state) || { x: 100, y: 100 });      
       const color = coloursRef.current.get(state) || 'red';      
-      updatePositions(state, [positions.current.get(state).x, positions.current.get(state).y])
+      
     
       const circle = new FabricCircle({
         left: pos.x,
@@ -147,7 +147,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
            
 
     const placeLine = (x1, y1, x2, y2, index) => {
-      let dist = index === 1 ? 0.7 * index : index === 2? 0.13 * index: index ===3? -0.4/4: -0.6;
+      let dist = index === 1 ? 0.7 * index : index === 2? 0.13 * index: index ===3? -0.13: -0.7;
 
       let above = y1 - (y2 - radius) > 0 ? true : false;
       let below = y1 - (y2 + radius) > 0 ? false : true;
@@ -171,10 +171,10 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
         }
       } else if (above) {
         if (right) {          
-          let n1 = x1 + (radius * Math.cos(-(Math.PI/2) - dist));
+          let n1 = x1 + (radius * Math.cos(-(Math.PI/2) + dist));
           let z1 = y1 + (radius * Math.sin(-(Math.PI/2) - dist));
           let n2 = x2 + (radius * Math.cos((2*Math.PI) + dist));
-          let z2 = y2 + (radius * Math.sin((2 * Math.PI) + dist));
+          let z2 = y2 + (radius * Math.sin((2 * Math.PI) - dist));
           return [[n1, z1], [n2, z2]];
         } else if (left) {
           let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) + dist));
@@ -183,9 +183,9 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
           let z2 = y2 + (radius * Math.sin(Math.PI - dist));
           return [[n1, z1], [n2, z2]];
         } else {
-          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) - dist));
+          let n1 = x1 + (radius * Math.cos((3 * Math.PI / 2) + dist));
           let z1 = y1 + (radius * Math.sin((3 * Math.PI / 2) - dist));
-          let n2 = x2 + (radius * Math.cos((Math.PI / 2) + dist));
+          let n2 = x2 + (radius * Math.cos((Math.PI / 2) - dist));
           let z2 = y2 + (radius * Math.sin((Math.PI / 2) + dist));
           return [[n1, z1], [n2, z2]];
         }
@@ -260,7 +260,7 @@ const Canvas = ({ states, transitions, positions, coloursRef, onCircleClick, upd
           }
 
           if (above && (left || right)) {
-            controlY = Math.min(Ny1, Ny2)-20;
+            controlY = Math.min(Ny1, Ny2)- 50;
           } 
           // else if(above && !(left || right)){
           //   controlY = Math.min(Ny1, Ny2) + 50;
