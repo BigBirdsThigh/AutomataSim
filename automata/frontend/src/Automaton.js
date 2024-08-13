@@ -216,8 +216,8 @@ const Automaton = () => {
 
 
         Transitions.forEach(t => {
-          console.log(t)
-          let [to, input, from] = t.split("-");
+          // console.log(t)
+          let [from, input, to] = t.split("-");
           
           const transitionObject = { from: from, to: to, input: input };
           setTransitions((prevStates) => [...prevStates, transitionObject]);
@@ -246,7 +246,7 @@ const Automaton = () => {
         // Finally, update the states list to trigger re-render
         setStates(names);
         
-        console.log("Updated states and transitions:", states, transitions);
+        // console.log("Updated states and transitions:", states, transitions);
 
     } catch (error) {
         setResponseMessage(error.message);
