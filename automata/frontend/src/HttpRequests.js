@@ -1,4 +1,3 @@
-import { parseSVGDocument } from 'fabric';
 import Transition from './Transition';
 
 const apiUrl = "http://localhost:5027/api/auto"; // Using HTTP for simplicity
@@ -82,6 +81,26 @@ export const updatePositions = async (name, position, colour) => {
 
 }
 
+export const changeType = async (type) => {
+  const change = new XMLHttpRequest();
+  change.open("POST", `${apiUrl}/setType`)
+  change.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+
+  const body = JSON.stringify(type);
+
+  return new Promise((resolve, reject) =>{
+    change.onload = () => {
+      if(change.readyState === 4 & change.status === 200){
+        resolve(JSON.parse(change.responseText))
+      }else{
+        reject(new Error(`Error changing type ${change.status}`))
+      }
+    }
+    change.onerror = () => reject(new Error("Network Error Occured"))
+    change.send(parseInt(type));
+  })
+}
+
   export const retrievePositions = async (state) => {
     const retrieve = new XMLHttpRequest();
     retrieve.open("GET", `${apiUrl}/retrieve?args=${state}`)
@@ -104,7 +123,7 @@ export const updatePositions = async (name, position, colour) => {
 
 export const deleteState = async (type, stateName) => {
     const stateData = JSON.stringify({
-        Type: type,
+        Type: true,
         Name: stateName
     });
 
@@ -112,7 +131,7 @@ export const deleteState = async (type, stateName) => {
     const stateDelete = new XMLHttpRequest();
     stateDelete.open("POST", `${apiUrl}/deleteState`);
     stateDelete.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-
+    console.log("Attempting Deletion: " + stateName)
     // Promise-based handling for async behavior
     return new Promise((resolve, reject) => {
         stateDelete.onload = () => {
@@ -181,7 +200,7 @@ export const createTransition = async (type, to, from, push, pop, input) => {
 
   if (type) {
     transData = JSON.stringify({
-      Type: type,
+      Type: true,
       From: from.replace(/"/g, ''), // remove extra quotes
       Input: replaceWithEpsilon(input),
       To: to.replace(/"/g, ''), // remove extra quotes

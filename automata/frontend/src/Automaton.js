@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh, retrievePositions, updatePositions } from './HttpRequests';
+import { createState, deleteState, createTransition, simDFA, simNFA, deleteTransition, refresh, retrievePositions, updatePositions, changeType } from './HttpRequests';
 import './tailwind.css';
 
 import Canvas from './Canvas';
@@ -16,7 +16,7 @@ const Automaton = () => {
   const [currTransition, setCurrTransition] = useState();
   const [inputChar, setInputChar] = useState('');
   const [stateTo, setStateTo] = useState('');
-  const [stateFrom, setStateFrom] = useState('');
+  const [stateFrom, setStateFrom] = useState('');  
   const [validateString, setValidateString] = useState('');
   const [pop, setPop] = useState('');
   const [push, setPush] = useState('');
@@ -178,7 +178,7 @@ const Automaton = () => {
   };
 
 
-  const handleDFASim = async () => {
+  const handleSim = async () => {
     try {
       const response = await simDFA(validateString);
       setResponseMessage(response.result.toString());
@@ -266,6 +266,17 @@ const Automaton = () => {
     setSelectedState(null);
   };
 
+  const handleSelectChange = async (e) => {
+    const selectedType = e.target.value; // Get the selected value from the event
+    setType(selectedType); // Update the state with the new value
+  
+    await changeType(selectedType); // Use the new selected value directly in changeType
+    handleRefresh();
+    console.log(selectedType); // Log the new selected value
+  };
+  
+  
+
   const LAYER_WIDTH = window.innerWidth - 400; 
   const LAYER_HEIGHT = window.innerHeight - 200; 
 
@@ -273,9 +284,19 @@ const Automaton = () => {
     <div className="container" style={{ display: 'flex', height: '98vh', padding: '10px', paddingTop: '15px', boxSizing: 'border-box' }}>
       <div className="controls" style={{ flex: '0 0 20%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '65px' }}>
         <button type="button" onClick={handleCreateState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Create State</button>
+        <select
+          onChange={handleSelectChange}
+          className="text-black bg-gradient-to-r from-cyan-100 via-cyan-200 to-cyan-300 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-md shadow-cyan-200/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-4 py-2 mb-2 w-1/2 appearance-none"
+        >
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+
+
         <button type="button" onClick={handleDeleteState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete State</button>
         <button type="button" onClick={handleDeleteTransition} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Delete Transition</button>
-        <button type="button" onClick={handleDFASim} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Sim DFA</button>
+        <button type="button" onClick={handleSim} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Sim DFA</button>
         <button type="button" onClick={changeAcceptState} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Set Accept State</button>
         <button type="button" onClick={handleRefresh} className="text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 shadow-lg shadow-cyan-500/50 dark:shadow-lg dark:shadow-cyan-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center mb-2 w-1/2">Refresh</button>
         <input type="text" value = {validateString} onChange={handleInputChange} id="first_name" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="John" required />
